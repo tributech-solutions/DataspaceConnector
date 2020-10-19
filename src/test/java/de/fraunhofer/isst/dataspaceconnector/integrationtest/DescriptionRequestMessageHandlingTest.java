@@ -27,6 +27,14 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * This class sends DescriptionRequestMessages to the connector's endpoint for IDS messages and checks whether a
+ * correct response is returned: either a DescriptionResponseMessage (self description or artifact description) or
+ * a RejectionMessage with the correct rejection reason.
+ *
+ * @author Ronja Quensel
+ * @version $Id: $Id
+ */
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @AutoConfigureMockMvc

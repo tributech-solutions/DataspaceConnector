@@ -31,6 +31,14 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+/**
+ * This class makes requests to the connector's endpoint for requesting artifacts from other connectors. Assuming
+ * a valid answer from the other connector, this class checks whether the received data was added to the correct
+ * resource in the database.
+ *
+ * @author Ronja Quensel
+ * @version $Id: $Id
+ */
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @AutoConfigureMockMvc

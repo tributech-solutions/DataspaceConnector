@@ -24,6 +24,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.UUID;
 
+/**
+ * This class makes requests to the connector's selfdescription endpoint and checks, whether the response is parsable
+ * to a valid Infomodel connector object and whether the connector's resources are added to the self description
+ * correctly.
+ *
+ * @author Ronja Quensel
+ * @version $Id: $Id
+ */
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @AutoConfigureMockMvc

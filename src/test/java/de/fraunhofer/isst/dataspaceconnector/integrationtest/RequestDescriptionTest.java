@@ -29,6 +29,14 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+/**
+ * This class makes requests to the connector's endpoint for requesting descriptions from other connectors. Assuming
+ * a valid answer from the other connector, this class checks whether a new resource was added to the connector's
+ * database after receiving an artifact description.
+ *
+ * @author Ronja Quensel
+ * @version $Id: $Id
+ */
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @AutoConfigureMockMvc
