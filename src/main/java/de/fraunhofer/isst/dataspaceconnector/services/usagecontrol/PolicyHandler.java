@@ -148,6 +148,10 @@ public class PolicyHandler {
         }
     }
 
+    public Contract getContract() {
+        return contract;
+    }
+
     public enum Pattern {
         /**
          * Standard pattern to allow unrestricted access.
