@@ -163,7 +163,7 @@ public class MainController {
     @RequestMapping(value = "/admin/api/example/policy-pattern", method = RequestMethod.POST)
     @ResponseBody
     public ResponseEntity<Object> getPolicyPattern(@Parameter(description = "The JSON string representing a policy", required = true)
-                                                       @RequestParam("policy") String policy) {
+                                                       @RequestBody String policy) {
         try {
             return new ResponseEntity<>(policyHandler.getPattern(policy), HttpStatus.OK);
         } catch (Exception e) {
