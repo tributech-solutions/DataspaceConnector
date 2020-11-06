@@ -78,6 +78,7 @@ public class MainController {
     public ResponseEntity<Object> getPublicSelfDescription() {
         try {
             BaseConnectorImpl connector = (BaseConnectorImpl) configurationContainer.getConnector();
+            connector.getResourceCatalog().clear();
             return new ResponseEntity<>(serializerProvider.getSerializer().serialize(connector), HttpStatus.OK);
         } catch (IOException e) {
             LOGGER.error("Could not create self-description: {}", e.getMessage());
