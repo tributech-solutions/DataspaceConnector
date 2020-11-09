@@ -1,4 +1,4 @@
-package de.fraunhofer.isst.dataspaceconnector.model;
+package de.fraunhofer.isst.dataspaceconnector.model.resource;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -91,8 +91,8 @@ public class ResourceRepresentation implements Serializable {
      * @param uuid       a {@link java.util.UUID} object.
      * @param type       a {@link java.lang.String} object.
      * @param byteSize   a {@link java.lang.Integer} object.
-     * @param sourceType a {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceRepresentation.SourceType} object.
-     * @param source     a {@link de.fraunhofer.isst.dataspaceconnector.model.BackendSource} object.
+     * @param sourceType a {@link ResourceRepresentation.SourceType} object.
+     * @param source     a {@link BackendSource} object.
      */
     public ResourceRepresentation(UUID uuid, String type, Integer byteSize, SourceType sourceType, BackendSource source) {
         this.uuid = uuid;
@@ -159,7 +159,7 @@ public class ResourceRepresentation implements Serializable {
     /**
      * <p>Getter for the field <code>sourceType</code>.</p>
      *
-     * @return a {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceRepresentation.SourceType} object.
+     * @return a {@link ResourceRepresentation.SourceType} object.
      */
     public SourceType getSourceType() {
         return sourceType;
@@ -168,7 +168,7 @@ public class ResourceRepresentation implements Serializable {
     /**
      * <p>Setter for the field <code>sourceType</code>.</p>
      *
-     * @param sourceType a {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceRepresentation.SourceType} object.
+     * @param sourceType a {@link ResourceRepresentation.SourceType} object.
      */
     public void setSourceType(SourceType sourceType) {
         this.sourceType = sourceType;
@@ -177,7 +177,7 @@ public class ResourceRepresentation implements Serializable {
     /**
      * <p>Getter for the field <code>source</code>.</p>
      *
-     * @return a {@link de.fraunhofer.isst.dataspaceconnector.model.BackendSource} object.
+     * @return a {@link BackendSource} object.
      */
     public BackendSource getSource() {
         return source;
@@ -186,7 +186,7 @@ public class ResourceRepresentation implements Serializable {
     /**
      * <p>Setter for the field <code>source</code>.</p>
      *
-     * @param source a {@link de.fraunhofer.isst.dataspaceconnector.model.BackendSource} object.
+     * @param source a {@link BackendSource} object.
      */
     public void setSource(BackendSource source) {
         this.source = source;

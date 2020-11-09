@@ -1,7 +1,7 @@
 package de.fraunhofer.isst.dataspaceconnector.integrationtest;
 
 import de.fraunhofer.isst.dataspaceconnector.model.RequestedResource;
-import de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata;
+import de.fraunhofer.isst.dataspaceconnector.model.resource.ResourceMetadata;
 import de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestService;
 import de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestServiceImpl;
 import de.fraunhofer.isst.dataspaceconnector.services.resource.RequestedResourceRepository;

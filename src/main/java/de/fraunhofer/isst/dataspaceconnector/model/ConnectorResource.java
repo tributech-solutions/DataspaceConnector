@@ -1,5 +1,7 @@
 package de.fraunhofer.isst.dataspaceconnector.model;
 
+import de.fraunhofer.isst.dataspaceconnector.model.resource.ResourceMetadata;
+
 import java.util.Date;
 import java.util.UUID;
 
@@ -55,14 +57,14 @@ public interface ConnectorResource {
     /**
      * <p>getResourceMetadata.</p>
      *
-     * @return a {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata} object.
+     * @return a {@link ResourceMetadata} object.
      */
     ResourceMetadata getResourceMetadata();
 
     /**
      * <p>setResourceMetadata.</p>
      *
-     * @param resourceMetadata a {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata} object.
+     * @param resourceMetadata a {@link ResourceMetadata} object.
      */
     void setResourceMetadata(ResourceMetadata resourceMetadata);
 

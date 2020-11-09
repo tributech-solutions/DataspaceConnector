@@ -2,8 +2,8 @@ package de.fraunhofer.isst.dataspaceconnector.services.resource;
 
 import de.fraunhofer.iais.eis.Resource;
 import de.fraunhofer.isst.dataspaceconnector.model.OfferedResource;
-import de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata;
-import de.fraunhofer.isst.dataspaceconnector.model.ResourceRepresentation;
+import de.fraunhofer.isst.dataspaceconnector.model.resource.ResourceMetadata;
+import de.fraunhofer.isst.dataspaceconnector.model.resource.ResourceRepresentation;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -33,7 +33,7 @@ public interface OfferedResourceService {
     /**
      * <p>addResource.</p>
      *
-     * @param resourceMetadata a {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata} object.
+     * @param resourceMetadata a {@link ResourceMetadata} object.
      * @return a {@link java.util.UUID} object.
      */
     UUID addResource(ResourceMetadata resourceMetadata);
@@ -41,7 +41,7 @@ public interface OfferedResourceService {
     /**
      * <p>addResourceWithId.</p>
      *
-     * @param resourceMetadata a {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata} object.
+     * @param resourceMetadata a {@link ResourceMetadata} object.
      * @param uuid a {@link java.util.UUID} object.
      */
     void addResourceWithId(ResourceMetadata resourceMetadata, UUID uuid);
@@ -58,7 +58,7 @@ public interface OfferedResourceService {
      * <p>updateResource.</p>
      *
      * @param resourceId a {@link java.util.UUID} object.
-     * @param resourceMetadata a {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata} object.
+     * @param resourceMetadata a {@link ResourceMetadata} object.
      */
     void updateResource(UUID resourceId, ResourceMetadata resourceMetadata);
 
@@ -89,7 +89,7 @@ public interface OfferedResourceService {
      * <p>getMetadata.</p>
      *
      * @param resourceId a {@link java.util.UUID} object.
-     * @return a {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata} object.
+     * @return a {@link ResourceMetadata} object.
      */
     ResourceMetadata getMetadata(UUID resourceId);
 
@@ -116,7 +116,7 @@ public interface OfferedResourceService {
      * <p>addRepresentation.</p>
      *
      * @param resourceId a {@link java.util.UUID} object.
-     * @param representation a {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceRepresentation} object.
+     * @param representation a {@link ResourceRepresentation} object.
      * @return a {@link java.util.UUID} object.
      */
     UUID addRepresentation(UUID resourceId, ResourceRepresentation representation);
@@ -125,7 +125,7 @@ public interface OfferedResourceService {
      * <p>addRepresentation.</p>
      *
      * @param resourceId a {@link java.util.UUID} object.
-     * @param representation a {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceRepresentation} object.
+     * @param representation a {@link ResourceRepresentation} object.
      * @param representationId the {@link UUID} that will be used for the new representation
      * @return a {@link java.util.UUID} object.
      */
@@ -136,7 +136,7 @@ public interface OfferedResourceService {
      *
      * @param resourceId a {@link java.util.UUID} object.
      * @param representationId a {@link java.util.UUID} object.
-     * @param representation a {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceRepresentation} object.
+     * @param representation a {@link ResourceRepresentation} object.
      */
     void updateRepresentation(UUID resourceId, UUID representationId, ResourceRepresentation representation);
 
@@ -145,7 +145,7 @@ public interface OfferedResourceService {
      *
      * @param resourceId a {@link java.util.UUID} object.
      * @param representationId a {@link java.util.UUID} object.
-     * @return a {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceRepresentation} object.
+     * @return a {@link ResourceRepresentation} object.
      */
     ResourceRepresentation getRepresentation(UUID resourceId, UUID representationId);
 

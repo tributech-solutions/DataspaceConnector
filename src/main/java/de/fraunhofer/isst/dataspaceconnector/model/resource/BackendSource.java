@@ -1,4 +1,4 @@
-package de.fraunhofer.isst.dataspaceconnector.model;
+package de.fraunhofer.isst.dataspaceconnector.model.resource;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;

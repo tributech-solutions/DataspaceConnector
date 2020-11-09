@@ -3,7 +3,7 @@ package de.fraunhofer.isst.dataspaceconnector.integrationtest;
 import de.fraunhofer.iais.eis.Connector;
 import de.fraunhofer.iais.eis.Resource;
 import de.fraunhofer.iais.eis.ids.jsonld.Serializer;
-import de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata;
+import de.fraunhofer.isst.dataspaceconnector.model.resource.ResourceMetadata;
 import de.fraunhofer.isst.dataspaceconnector.services.resource.*;
 import org.junit.Assert;
 import org.junit.Test;

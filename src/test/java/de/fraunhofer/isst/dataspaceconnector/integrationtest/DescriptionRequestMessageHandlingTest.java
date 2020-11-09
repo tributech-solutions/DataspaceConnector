@@ -5,7 +5,7 @@ import de.fraunhofer.iais.eis.DescriptionResponseMessage;
 import de.fraunhofer.iais.eis.RejectionMessage;
 import de.fraunhofer.iais.eis.RejectionReason;
 import de.fraunhofer.iais.eis.ids.jsonld.Serializer;
-import de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata;
+import de.fraunhofer.isst.dataspaceconnector.model.resource.ResourceMetadata;
 import de.fraunhofer.isst.dataspaceconnector.services.resource.OfferedResourceRepository;
 import de.fraunhofer.isst.dataspaceconnector.services.resource.OfferedResourceService;
 import de.fraunhofer.isst.ids.framework.spring.starter.TokenProvider;

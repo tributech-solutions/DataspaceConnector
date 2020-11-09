@@ -1,4 +1,4 @@
-package de.fraunhofer.isst.dataspaceconnector.model;
+package de.fraunhofer.isst.dataspaceconnector.model.resource;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;

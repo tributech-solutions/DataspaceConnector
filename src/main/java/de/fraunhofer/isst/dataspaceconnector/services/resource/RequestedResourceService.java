@@ -2,7 +2,7 @@ package de.fraunhofer.isst.dataspaceconnector.services.resource;
 
 import de.fraunhofer.iais.eis.Resource;
 import de.fraunhofer.isst.dataspaceconnector.model.RequestedResource;
-import de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata;
+import de.fraunhofer.isst.dataspaceconnector.model.resource.ResourceMetadata;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,7 +18,7 @@ public interface RequestedResourceService {
     /**
      * <p>addResource.</p>
      *
-     * @param resourceMetadata a {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata} object.
+     * @param resourceMetadata a {@link ResourceMetadata} object.
      * @return a {@link java.util.UUID} object.
      */
     UUID addResource(ResourceMetadata resourceMetadata);
@@ -50,7 +50,7 @@ public interface RequestedResourceService {
      * <p>getMetadata.</p>
      *
      * @param id a {@link java.util.UUID} object.
-     * @return a {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata} object.
+     * @return a {@link ResourceMetadata} object.
      */
     ResourceMetadata getMetadata(UUID id);
 

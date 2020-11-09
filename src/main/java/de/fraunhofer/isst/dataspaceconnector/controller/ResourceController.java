@@ -1,7 +1,7 @@
 package de.fraunhofer.isst.dataspaceconnector.controller;
 
-import de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata;
-import de.fraunhofer.isst.dataspaceconnector.model.ResourceRepresentation;
+import de.fraunhofer.isst.dataspaceconnector.model.resource.ResourceMetadata;
+import de.fraunhofer.isst.dataspaceconnector.model.resource.ResourceRepresentation;
 import de.fraunhofer.isst.dataspaceconnector.services.resource.OfferedResourceService;
 import de.fraunhofer.isst.dataspaceconnector.services.resource.RequestedResourceService;
 import de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyHandler;
@@ -20,8 +20,8 @@ import java.util.UUID;
 
 /**
  * This class provides endpoints for the internal resource handling. Resources can be created and modified with it's
- * {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata} including {@link de.fraunhofer.iais.eis.Contract}
- * and {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceRepresentation}.
+ * {@link ResourceMetadata} including {@link de.fraunhofer.iais.eis.Contract}
+ * and {@link ResourceRepresentation}.
  *
  * @author Julia Pampus
  * @version $Id: $Id

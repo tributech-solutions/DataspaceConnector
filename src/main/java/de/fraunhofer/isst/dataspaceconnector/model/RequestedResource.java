@@ -1,6 +1,7 @@
 package de.fraunhofer.isst.dataspaceconnector.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import de.fraunhofer.isst.dataspaceconnector.model.resource.ResourceMetadata;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -53,7 +54,7 @@ public class RequestedResource implements ConnectorResource{
      *
      * @param created a {@link java.util.Date} object.
      * @param modified a {@link java.util.Date} object.
-     * @param resourceMetadata a {@link de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata} object.
+     * @param resourceMetadata a {@link ResourceMetadata} object.
      * @param data a {@link java.lang.String} object.
      * @param accessed a {@link java.lang.Integer} object.
      */
