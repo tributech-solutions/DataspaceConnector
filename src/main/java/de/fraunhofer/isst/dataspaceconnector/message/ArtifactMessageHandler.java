@@ -197,7 +197,7 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
                 ._prohibition_(contractRequest.getProhibition())
                 .build();
 
-        return BodyResponse.create(new ContractRejectionMessageBuilder()
+        return BodyResponse.create(new ContractAgreementMessageBuilder()
                 ._securityToken_(provider.getTokenJWS())
                 ._correlationMessage_(message.getId())
                 ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
@@ -205,8 +205,6 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
                 ._modelVersion_(connector.getOutboundModelVersion())
                 ._senderAgent_(connector.getId())
                 ._recipientConnector_(Util.asList(message.getIssuerConnector()))
-                ._rejectionReason_(RejectionReason.BAD_PARAMETERS)
-                ._contractRejectionReason_(new TypedLiteral("Contract not accepted.", "en"))
                 .build(), contractAgreement.toRdf());
     }
 
