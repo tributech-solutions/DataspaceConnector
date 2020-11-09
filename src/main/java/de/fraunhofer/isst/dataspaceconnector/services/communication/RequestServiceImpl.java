@@ -23,9 +23,9 @@ import java.net.URI;
  * @version $Id: $Id
  */
 @Service
-public class MessageServiceImpl implements MessageService {
+public class RequestServiceImpl implements RequestService {
     /** Constant <code>LOGGER</code> */
-    public static final Logger LOGGER = LoggerFactory.getLogger(MessageServiceImpl.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(RequestServiceImpl.class);
 
     private Connector connector;
     private TokenProvider tokenProvider;
@@ -39,7 +39,7 @@ public class MessageServiceImpl implements MessageService {
      * @param tokenProvider a {@link de.fraunhofer.isst.ids.framework.spring.starter.TokenProvider} object.
      * @param idsHttpService a {@link de.fraunhofer.isst.ids.framework.spring.starter.IDSHttpService} object.
      */
-    public MessageServiceImpl(ConfigurationContainer configurationContainer, TokenProvider tokenProvider,
+    public RequestServiceImpl(ConfigurationContainer configurationContainer, TokenProvider tokenProvider,
                               IDSHttpService idsHttpService) {
         this.connector = configurationContainer.getConnector();
         this.tokenProvider = tokenProvider;

@@ -3,7 +3,7 @@ package de.fraunhofer.isst.dataspaceconnector.services.usagecontrol;
 import de.fraunhofer.iais.eis.Contract;
 import de.fraunhofer.iais.eis.Rule;
 import de.fraunhofer.isst.dataspaceconnector.services.HttpUtils;
-import de.fraunhofer.isst.dataspaceconnector.services.communication.MessageService;
+import de.fraunhofer.isst.dataspaceconnector.services.communication.RequestService;
 import de.fraunhofer.isst.ids.framework.exceptions.HttpClientException;
 import okhttp3.Response;
 import org.slf4j.Logger;
@@ -34,7 +34,7 @@ public class PolicyVerifier {
     public static final Logger LOGGER = LoggerFactory.getLogger(PolicyVerifier.class);
 
     private PolicyReader policyReader;
-    private MessageService messageService;
+    private RequestService requestService;
     private HttpUtils httpUtils;
 
     @Autowired
@@ -43,11 +43,11 @@ public class PolicyVerifier {
      *
      * @param policyReader a {@link de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyReader} object.
      * @param httpUtils a {@link de.fraunhofer.isst.dataspaceconnector.services.HttpUtils} object.
-     * @param messageService a {@link de.fraunhofer.isst.dataspaceconnector.services.communication.MessageService} object.
+     * @param messageService a {@link RequestService} object.
      */
-    public PolicyVerifier(PolicyReader policyReader, MessageService messageService, HttpUtils httpUtils) {
+    public PolicyVerifier(PolicyReader policyReader, RequestService requestService, HttpUtils httpUtils) {
         this.policyReader = policyReader;
-        this.messageService = messageService;
+        this.requestService = requestService;
         this.httpUtils = httpUtils;
     }
 
@@ -76,7 +76,7 @@ public class PolicyVerifier {
      */
     public boolean logAccess() {
         try {
-            Response response = messageService.sendLogMessage();
+            Response response = requestService.sendLogMessage();
             if (response != null && response.code() == 200) {
                 return allowAccess();
             } else {
@@ -100,7 +100,7 @@ public class PolicyVerifier {
         String recipient = policyReader.getEndpoint(rule);
 
         try {
-            Response response = messageService.sendNotificationMessage(recipient);
+            Response response = requestService.sendNotificationMessage(recipient);
             if (response != null && response.code() == 200) {
                 return allowAccess();
             } else {

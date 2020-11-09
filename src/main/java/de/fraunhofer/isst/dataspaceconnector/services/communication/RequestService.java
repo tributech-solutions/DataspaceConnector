@@ -11,7 +11,7 @@ import java.io.IOException;
  * @author Julia Pampus
  * @version $Id: $Id
  */
-public interface MessageService {
+public interface RequestService {
     /**
      * <p>sendLogMessage.</p>
      *
