@@ -90,6 +90,7 @@ public class RequestController {
 
             if (connectorRequestServiceUtils.resourceExists(key)) {
                 Response response = requestMessageService.sendArtifactRequestMessage(recipient, requestedArtifact, contract);
+                LOGGER.info("Sent artifact request message with contract request.");
                 String responseAsString = response.body().string();
 
                 try {
