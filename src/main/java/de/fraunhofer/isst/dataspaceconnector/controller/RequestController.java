@@ -1,7 +1,9 @@
 package de.fraunhofer.isst.dataspaceconnector.controller;
 
+import de.fraunhofer.iais.eis.Contract;
 import de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestServiceImpl;
 import de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestServiceUtils;
+import de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyHandler;
 import de.fraunhofer.isst.ids.framework.spring.starter.TokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,6 +37,8 @@ public class RequestController {
     private ConnectorRequestServiceImpl requestMessageService;
     private ConnectorRequestServiceUtils connectorRequestServiceUtils;
 
+    private PolicyHandler policyHandler;
+
     @Autowired
     /**
      * <p>Constructor for RequestController.</p>
@@ -43,10 +47,12 @@ public class RequestController {
      * @param requestMessageService a {@link de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestServiceImpl} object.
      * @param connectorRequestServiceUtils a {@link de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestServiceUtils} object.
      */
-    public RequestController(TokenProvider tokenProvider, ConnectorRequestServiceImpl requestMessageService, ConnectorRequestServiceUtils connectorRequestServiceUtils) {
+    public RequestController(TokenProvider tokenProvider, ConnectorRequestServiceImpl requestMessageService,
+                             ConnectorRequestServiceUtils connectorRequestServiceUtils, PolicyHandler policyHandler) {
         this.tokenProvider = tokenProvider;
         this.requestMessageService = requestMessageService;
         this.connectorRequestServiceUtils = connectorRequestServiceUtils;
+        this.policyHandler = policyHandler;
     }
 
     /**
@@ -54,6 +60,7 @@ public class RequestController {
      *
      * @param recipient         The target connector uri.
      * @param requestedArtifact The requested resource uri.
+     * @param contractOffer     The contract offer string.
      * @return OK or error response.
      * @param key a {@link java.util.UUID} object.
      * @throws java.io.IOException if any.
@@ -69,10 +76,20 @@ public class RequestController {
             @Parameter(description = "The URI of the requested artifact.", required = true,
                     example = "https://w3id.org/idsa/autogen/artifact/a4212311-86e4-40b3-ace3-ef29cd687cf9")
             @RequestParam(value = "requestedArtifact") URI requestedArtifact,
+            @Parameter(description = "The contract offer for the requested resource.", required = true) @RequestBody String contractOffer,
             @Parameter(description = "A unique validation key.", required = true) @RequestParam("key") UUID key) throws IOException {
         if (tokenProvider.getTokenJWS() != null) {
+            Contract contract;
+            try {
+                policyHandler.getPattern(contractOffer);
+                contract = policyHandler.getContract();
+            } catch (Exception e) {
+                LOGGER.error("Policy pattern not supported.");
+                return new ResponseEntity<>("This is not a valid policy.", HttpStatus.BAD_REQUEST);
+            }
+
             if (connectorRequestServiceUtils.resourceExists(key)) {
-                Response response = requestMessageService.sendArtifactRequestMessage(recipient, requestedArtifact);
+                Response response = requestMessageService.sendArtifactRequestMessage(recipient, requestedArtifact, contract);
                 String responseAsString = response.body().string();
 
                 try {
