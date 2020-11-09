@@ -1,6 +1,7 @@
 package de.fraunhofer.isst.dataspaceconnector.services.communication;
 
 import de.fraunhofer.iais.eis.*;
+import de.fraunhofer.isst.dataspaceconnector.services.IdsUtils;
 import de.fraunhofer.isst.ids.framework.configuration.ConfigurationContainer;
 import de.fraunhofer.isst.ids.framework.exceptions.HttpClientException;
 import de.fraunhofer.isst.ids.framework.messages.InfomodelMessageBuilder;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Date;
 
 /**
  * This class implements all methods of {@link de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestService}. It provides message handling for all outgoing
@@ -36,20 +38,24 @@ public class ConnectorRequestServiceImpl implements ConnectorRequestService {
     private TokenProvider tokenProvider;
     private IDSHttpService idsHttpService;
 
+    private IdsUtils idsUtils;
+
     @Autowired
     /**
      * <p>Constructor for ConnectorRequestServiceImpl.</p>
      *
      * @param configurationContainer a {@link de.fraunhofer.isst.ids.framework.configuration.ConfigurationContainer} object.
      * @param tokenProvider a {@link de.fraunhofer.isst.ids.framework.spring.starter.TokenProvider} object.
+     * @param idsUtils a{IdsUtils} object.
      * @throws de.fraunhofer.isst.ids.framework.exceptions.HttpClientException if any.
      * @throws java.security.KeyManagementException if any.
      * @throws java.security.NoSuchAlgorithmException if any.
      */
-    public ConnectorRequestServiceImpl(ConfigurationContainer configurationContainer, TokenProvider tokenProvider)
+    public ConnectorRequestServiceImpl(ConfigurationContainer configurationContainer, TokenProvider tokenProvider, IdsUtils idsUtils)
             throws HttpClientException, KeyManagementException, NoSuchAlgorithmException {
         this.connector = configurationContainer.getConnector();
         this.tokenProvider = tokenProvider;
+        this.idsUtils = idsUtils;
 
         ClientProvider clientProvider = new ClientProvider(configurationContainer);
         this.idsHttpService = new IDSHttpService(clientProvider);
@@ -62,10 +68,16 @@ public class ConnectorRequestServiceImpl implements ConnectorRequestService {
      */
     @Override
     public Response sendArtifactRequestMessage(URI recipient, URI artifact, Contract contract) throws IOException {
-        ContractRequest contractRequest = new ContractRequestBuilder()
-                ._consumer_(recipient)
-                ._provider_(connector.getId())
-                .build();
+        String payload = "";
+        if (contract != null) {
+            payload = new ContractRequestBuilder()
+                    ._consumer_(connector.getMaintainer())
+                    ._contractDate_(idsUtils.getGregorianOf(new Date()))
+                    ._obligation_(contract.getObligation())
+                    ._permission_(contract.getPermission())
+                    ._prohibition_(contract.getProhibition())
+                    .build().toRdf();
+        }
 
         ArtifactRequestMessage requestMessage = new ArtifactRequestMessageBuilder()
                 ._issued_(Util.getGregorianNow())
@@ -77,7 +89,7 @@ public class ConnectorRequestServiceImpl implements ConnectorRequestService {
                 ._recipientConnector_(de.fraunhofer.iais.eis.util.Util.asList(recipient))
                 .build();
 
-        MultipartBody body = InfomodelMessageBuilder.messageWithString(requestMessage, contract.toRdf());
+        MultipartBody body = InfomodelMessageBuilder.messageWithString(requestMessage, payload);
         return idsHttpService.send(body, recipient);
     }
 
