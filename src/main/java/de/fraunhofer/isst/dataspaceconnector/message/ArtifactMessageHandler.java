@@ -1,8 +1,10 @@
 package de.fraunhofer.isst.dataspaceconnector.message;
 
 import de.fraunhofer.iais.eis.*;
+import de.fraunhofer.iais.eis.util.TypedLiteral;
 import de.fraunhofer.iais.eis.util.Util;
-import de.fraunhofer.isst.dataspaceconnector.model.ResourceMetadata;
+import de.fraunhofer.isst.dataspaceconnector.model.resource.ResourceMetadata;
+import de.fraunhofer.isst.dataspaceconnector.services.IdsUtils;
 import de.fraunhofer.isst.dataspaceconnector.services.resource.OfferedResourceService;
 import de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyHandler;
 import de.fraunhofer.isst.ids.framework.configuration.ConfigurationContainer;
@@ -12,16 +14,20 @@ import de.fraunhofer.isst.ids.framework.messaging.core.handler.api.model.BodyRes
 import de.fraunhofer.isst.ids.framework.messaging.core.handler.api.model.ErrorResponse;
 import de.fraunhofer.isst.ids.framework.messaging.core.handler.api.model.MessagePayload;
 import de.fraunhofer.isst.ids.framework.messaging.core.handler.api.model.MessageResponse;
+import de.fraunhofer.isst.ids.framework.spring.starter.SerializerProvider;
 import de.fraunhofer.isst.ids.framework.spring.starter.TokenProvider;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * This @{@link de.fraunhofer.isst.dataspaceconnector.message.ArtifactMessageHandler} handles all incoming messages that
@@ -41,25 +47,38 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
 
     private final TokenProvider provider;
     private final Connector connector;
+    private SerializerProvider serializerProvider;
 
     private OfferedResourceService offeredResourceService;
     private PolicyHandler policyHandler;
+    private MessageUtils messageUtils;
+    private IdsUtils idsUtils;
+
+    private ResourceMetadata resourceMetadata;
+    private ArtifactRequestMessageImpl message;
+    private UUID artifactId, resourceId;
 
     @Autowired
     /**
      * <p>Constructor for ArtifactMessageHandler.</p>
      *
+     * @param configurationContainer a {@link de.fraunhofer.isst.ids.framework.configuration.ConfigurationContainer} object.
      * @param offeredResourceService a {@link de.fraunhofer.isst.dataspaceconnector.services.resource.OfferedResourceService} object.
-     * @param provider a {@link de.fraunhofer.isst.ids.framework.spring.starter.TokenProvider} object.
-     * @param connector a {@link de.fraunhofer.iais.eis.Connector} object.
+     * @param idsUtils a {@link IdsUtils} object.
+     * @param tokenProvider a {@link de.fraunhofer.isst.ids.framework.spring.starter.TokenProvider} object.
      * @param policyHandler a {@link de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyHandler} object.
+     * @param messageUtils a {@link MessageUtils} object.
+     * @param serializeProvider a {@link de.fraunhofer.isst.ids.framework.spring.starter.SerializerProvider} object.
      */
-    public ArtifactMessageHandler(OfferedResourceService offeredResourceService, TokenProvider provider,
-                                  ConfigurationContainer configurationContainer, PolicyHandler policyHandler) {
+    public ArtifactMessageHandler(OfferedResourceService offeredResourceService, ConfigurationContainer configurationContainer, IdsUtils idsUtils,
+                                  TokenProvider provider, PolicyHandler policyHandler, MessageUtils messageUtils, SerializerProvider serializerProvider) {
         this.offeredResourceService = offeredResourceService;
         this.provider = provider;
         this.connector = configurationContainer.getConnector();
+        this.idsUtils = idsUtils;
         this.policyHandler = policyHandler;
+        this.messageUtils = messageUtils;
+        this.serializerProvider = serializerProvider;
     }
 
     /**
@@ -69,44 +88,23 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
      * the messagePayload-InputStream is converted to a String.
      */
     @Override
-    public MessageResponse handleMessage(ArtifactRequestMessageImpl requestMessage, MessagePayload messagePayload) {
-        ResponseMessage responseMessage = new ArtifactResponseMessageBuilder()
-                ._securityToken_(provider.getTokenJWS())
-                ._correlationMessage_(requestMessage.getId())
-                ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
-                ._issuerConnector_(connector.getId())
-                ._modelVersion_(connector.getOutboundModelVersion())
-                ._senderAgent_(connector.getId())
-                ._recipientConnector_(Util.asList(requestMessage.getIssuerConnector()))
-                .build();
+    public MessageResponse handleMessage(ArtifactRequestMessageImpl message, MessagePayload messagePayload) {
+        this.message = message;
+        artifactId = messageUtils.uuidFromUri(message.getRequestedArtifact());
 
-        UUID artifactId = uuidFromUri(requestMessage.getRequestedArtifact());
-        URI requestedResource = null;
-
-        for (Resource resource : offeredResourceService.getResourceList()) {
-            for (Representation representation : resource.getRepresentation()) {
-                UUID representationId = uuidFromUri(representation.getId());
-
-                if (representationId.equals(artifactId)) {
-                    requestedResource = resource.getId();
-                }
-            }
+        if (messageUtils.checkForIncompatibleVersion(message.getModelVersion())) {
+            LOGGER.error("Information Model version of requesting connector is not supported.");
+            return ErrorResponse.withDefaultHeader(RejectionReason.VERSION_NOT_SUPPORTED, "Outbound model version not supported.", connector.getId(), connector.getOutboundModelVersion());
         }
 
         try {
-            UUID resourceId = uuidFromUri(requestedResource);
-            ResourceMetadata resourceMetadata = offeredResourceService.getMetadata(resourceId);
-            try {
-                if (policyHandler.onDataProvision(resourceMetadata.getPolicy())) {
-                    String data = offeredResourceService.getDataByRepresentation(resourceId, artifactId);
-                    return BodyResponse.create(responseMessage, data);
-                } else {
-                    LOGGER.error("Policy restriction detected: " + policyHandler.getPattern(resourceMetadata.getPolicy()));
-                    return ErrorResponse.withDefaultHeader(RejectionReason.NOT_AUTHORIZED, "Policy restriction detected: You are not authorized to receive this data.", connector.getId(), connector.getOutboundModelVersion());
-                }
-            } catch (Exception e) {
-                LOGGER.error("Exception: {}", e.getMessage());
-                return ErrorResponse.withDefaultHeader(RejectionReason.INTERNAL_RECIPIENT_ERROR, e.getMessage(), connector.getId(), connector.getOutboundModelVersion());
+            resourceId = messageUtils.uuidFromUri(getRequestedResource(artifactId));
+            resourceMetadata = offeredResourceService.getMetadata(resourceId);
+
+            if (messagePayload == null) {
+                return accessControl();
+            } else {
+                return checkContractOffer(messagePayload);
             }
         } catch (Exception e) {
             LOGGER.error("Resource could not be found.");
@@ -115,18 +113,120 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
     }
 
     /**
-     * Extracts the uuid from a uri.
+     * Gets the resource of the requested artifact.
      *
-     * @param uri The base uri.
-     * @return Uuid as String.
+     * @param artifactId The artifact id.
+     * @return The resource uuid.
      */
-    private UUID uuidFromUri(URI uri) {
-        Pattern pairRegex = Pattern.compile("\\p{XDigit}{8}-\\p{XDigit}{4}-\\p{XDigit}{4}-\\p{XDigit}{4}-\\p{XDigit}{12}");
-        Matcher matcher = pairRegex.matcher(uri.toString());
-        String uuid = "";
-        while (matcher.find()) {
-            uuid = matcher.group(0);
+    private URI getRequestedResource(UUID artifactId) {
+        URI resourceId = null;
+        for (Resource resource : offeredResourceService.getResourceList()) {
+            for (Representation representation : resource.getRepresentation()) {
+                UUID representationId = messageUtils.uuidFromUri(representation.getId());
+
+                if (representationId.equals(artifactId)) {
+                    resourceId = resource.getId();
+                }
+            }
         }
-        return UUID.fromString(uuid);
+        return resourceId;
+    }
+
+    private MessageResponse checkContractOffer(MessagePayload messagePayload) {
+        try {
+            // read message payload as string
+            String request = IOUtils.toString(messagePayload.getUnderlyingInputStream(), StandardCharsets.UTF_8);
+            // deserialize string to infomodel object
+            ContractRequest contractRequest = serializerProvider.getSerializer().deserialize(request, ContractRequest.class);
+            // load contract offer from metadata
+            ContractOffer contractOffer = serializerProvider.getSerializer().deserialize(resourceMetadata.getPolicy(), ContractOffer.class);
+
+            if (contractRequest.getObligation() == contractOffer.getObligation()
+                    && contractRequest.getPermission() == contractOffer.getPermission()
+                    && contractRequest.getProhibition() == contractOffer.getProhibition()) {
+                return acceptContract(contractRequest);
+            } else {
+                return rejectContract();
+            }
+        } catch (IOException e) {
+            LOGGER.error("Error: {}" + e.getMessage());
+            return ErrorResponse.withDefaultHeader(RejectionReason.BAD_PARAMETERS, "Could not read contract offer.", connector.getId(), connector.getOutboundModelVersion());
+        }
+    }
+
+    /**
+     * Checks the policy to ensure that the data may be accessed or not.
+     *
+     * @return The message response to the requesting connector.
+     */
+    private MessageResponse accessControl() {
+        try {
+            if (policyHandler.onDataProvision(resourceMetadata.getPolicy())) {
+                return BodyResponse.create(new ArtifactResponseMessageBuilder()
+                        ._securityToken_(provider.getTokenJWS())
+                        ._correlationMessage_(message.getId())
+                        ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
+                        ._issuerConnector_(connector.getId())
+                        ._modelVersion_(connector.getOutboundModelVersion())
+                        ._senderAgent_(connector.getId())
+                        ._recipientConnector_(Util.asList(message.getIssuerConnector()))
+                        .build(), offeredResourceService.getDataByRepresentation(resourceId, artifactId));
+            } else {
+                LOGGER.error("Policy restriction detected: " + policyHandler.getPattern(resourceMetadata.getPolicy()));
+                return ErrorResponse.withDefaultHeader(RejectionReason.NOT_AUTHORIZED, "Policy restriction detected: You are not authorized to receive this data.", connector.getId(), connector.getOutboundModelVersion());
+            }
+        } catch (Exception e) {
+            LOGGER.error("Policy verification error: {}" + e.getMessage());
+            return ErrorResponse.withDefaultHeader(RejectionReason.INTERNAL_RECIPIENT_ERROR, "INTERNAL RECIPIENT ERROR", connector.getId(), connector.getOutboundModelVersion());
+        }
+    }
+
+    private MessageResponse acceptContract(ContractRequest contractRequest) {
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date());
+        c.add(Calendar.YEAR, 1);
+
+        ContractAgreement contractAgreement = new ContractAgreementBuilder()
+                ._consumer_(contractRequest.getConsumer())
+                ._provider_(connector.getMaintainer())
+                ._contractDate_(idsUtils.getGregorianOf(new Date()))
+                ._contractStart_(idsUtils.getGregorianOf(new Date()))
+                ._contractEnd_(idsUtils.getGregorianOf(c.getTime()))
+                ._obligation_(contractRequest.getObligation())
+                ._permission_(contractRequest.getPermission())
+                ._prohibition_(contractRequest.getProhibition())
+                .build();
+
+        return BodyResponse.create(new ContractRejectionMessageBuilder()
+                ._securityToken_(provider.getTokenJWS())
+                ._correlationMessage_(message.getId())
+                ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
+                ._issuerConnector_(connector.getId())
+                ._modelVersion_(connector.getOutboundModelVersion())
+                ._senderAgent_(connector.getId())
+                ._recipientConnector_(Util.asList(message.getIssuerConnector()))
+                ._rejectionReason_(RejectionReason.BAD_PARAMETERS)
+                ._contractRejectionReason_(new TypedLiteral("Contract not accepted.", "en"))
+                .build(), contractAgreement.toRdf());
+    }
+
+    /**
+     * Builds a contract rejection message with a rejection reason.
+     * Future TODO: send new ContractOffer message
+     *
+     * @return A contract rejection message.
+     */
+    private MessageResponse rejectContract() {
+        return BodyResponse.create(new ContractRejectionMessageBuilder()
+                ._securityToken_(provider.getTokenJWS())
+                ._correlationMessage_(message.getId())
+                ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
+                ._issuerConnector_(connector.getId())
+                ._modelVersion_(connector.getOutboundModelVersion())
+                ._senderAgent_(connector.getId())
+                ._recipientConnector_(Util.asList(message.getIssuerConnector()))
+                ._rejectionReason_(RejectionReason.BAD_PARAMETERS)
+                ._contractRejectionReason_(new TypedLiteral("Contract not accepted.", "en"))
+                .build(), "");
     }
 }
