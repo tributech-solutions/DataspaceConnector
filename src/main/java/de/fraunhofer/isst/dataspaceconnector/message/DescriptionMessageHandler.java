@@ -37,7 +37,7 @@ public class DescriptionMessageHandler implements MessageHandler<DescriptionRequ
     public static final Logger LOGGER = LoggerFactory.getLogger(DescriptionMessageHandler.class);
 
     private OfferedResourceService offeredResourceService;
-    private TokenProvider provider;
+    private TokenProvider tokenProvider;
     private Connector connector;
     private MessageUtils messageUtils;
 
@@ -49,16 +49,16 @@ public class DescriptionMessageHandler implements MessageHandler<DescriptionRequ
      * <p>Constructor for DescriptionMessageHandler.</p>
      *
      * @param offeredResourceService a {@link de.fraunhofer.isst.dataspaceconnector.services.resource.OfferedResourceService} object.
-     * @param provider a {@link de.fraunhofer.isst.ids.framework.spring.starter.TokenProvider} object.
+     * @param tokenProvider a {@link de.fraunhofer.isst.ids.framework.spring.starter.TokenProvider} object.
      * @param connector a {@link de.fraunhofer.iais.eis.Connector} object.
      * @param configProducer a {@link de.fraunhofer.isst.ids.framework.spring.starter.ConfigProducer} object.
      * @param serializerProvider a {@link de.fraunhofer.isst.ids.framework.spring.starter.SerializerProvider} object.
      * @param messageUtils a {@link MessageUtils} object.
      */
     public DescriptionMessageHandler(OfferedResourceService offeredResourceService, ConfigurationContainer configurationContainer,
-                                     TokenProvider provider, SerializerProvider serializerProvider, MessageUtils messageUtils) {
+                                     TokenProvider tokenProvider, SerializerProvider serializerProvider, MessageUtils messageUtils) {
         this.offeredResourceService = offeredResourceService;
-        this.provider = provider;
+        this.tokenProvider = tokenProvider;
         this.connector = configurationContainer.getConnector();
         this.configurationContainer = configurationContainer;
         this.serializerProvider = serializerProvider;
@@ -74,7 +74,7 @@ public class DescriptionMessageHandler implements MessageHandler<DescriptionRequ
     @Override
     public MessageResponse handleMessage(DescriptionRequestMessageImpl message, MessagePayload messagePayload) {
         ResponseMessage responseMessage = new DescriptionResponseMessageBuilder()
-                ._securityToken_(provider.getTokenJWS())
+                ._securityToken_(tokenProvider.getTokenJWS())
                 ._correlationMessage_(message.getId())
                 ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
                 ._issuerConnector_(connector.getId())
