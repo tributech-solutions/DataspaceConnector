@@ -61,7 +61,12 @@ public class ConnectorRequestServiceImpl implements ConnectorRequestService {
      * Builds and sends an ArtifactRequestMessage.
      */
     @Override
-    public Response sendArtifactRequestMessage(URI recipient, URI artifact) throws IOException {
+    public Response sendArtifactRequestMessage(URI recipient, URI artifact, Contract contract) throws IOException {
+        ContractRequest contractRequest = new ContractRequestBuilder()
+                ._consumer_(recipient)
+                ._provider_(connector.getId())
+                .build();
+
         ArtifactRequestMessage requestMessage = new ArtifactRequestMessageBuilder()
                 ._issued_(Util.getGregorianNow())
                 ._modelVersion_(connector.getOutboundModelVersion())
@@ -72,7 +77,7 @@ public class ConnectorRequestServiceImpl implements ConnectorRequestService {
                 ._recipientConnector_(de.fraunhofer.iais.eis.util.Util.asList(recipient))
                 .build();
 
-        MultipartBody body = InfomodelMessageBuilder.messageWithString(requestMessage, "");
+        MultipartBody body = InfomodelMessageBuilder.messageWithString(requestMessage, contract.toRdf());
         return idsHttpService.send(body, recipient);
     }
 

@@ -1,5 +1,6 @@
 package de.fraunhofer.isst.dataspaceconnector.services.communication;
 
+import de.fraunhofer.iais.eis.Contract;
 import okhttp3.Response;
 
 import java.io.IOException;
@@ -20,7 +21,7 @@ public interface ConnectorRequestService {
      * @return a {@link okhttp3.Response} object.
      * @throws java.io.IOException if any.
      */
-    Response sendArtifactRequestMessage(URI recipient, URI artifact) throws IOException;
+    Response sendArtifactRequestMessage(URI recipient, URI artifact, Contract contract) throws IOException;
 
     /**
      * <p>sendDescriptionRequestMessage.</p>
