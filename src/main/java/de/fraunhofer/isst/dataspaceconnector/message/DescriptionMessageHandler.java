@@ -72,24 +72,24 @@ public class DescriptionMessageHandler implements MessageHandler<DescriptionRequ
      * the messagePayload-InputStream is converted to a String.
      */
     @Override
-    public MessageResponse handleMessage(DescriptionRequestMessageImpl requestMessage, MessagePayload messagePayload) {
+    public MessageResponse handleMessage(DescriptionRequestMessageImpl message, MessagePayload messagePayload) {
         ResponseMessage responseMessage = new DescriptionResponseMessageBuilder()
                 ._securityToken_(provider.getTokenJWS())
-                ._correlationMessage_(requestMessage.getId())
+                ._correlationMessage_(message.getId())
                 ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
                 ._issuerConnector_(connector.getId())
                 ._modelVersion_(connector.getOutboundModelVersion())
                 ._senderAgent_(connector.getId())
-                ._recipientConnector_(Util.asList(requestMessage.getIssuerConnector()))
+                ._recipientConnector_(Util.asList(message.getIssuerConnector()))
                 .build();
 
-        if (messageUtils.checkForIncompatibleVersion(requestMessage.getModelVersion())) {
+        if (messageUtils.checkForIncompatibleVersion(message.getModelVersion())) {
             LOGGER.error("Information Model version of requesting connector is not supported.");
             return ErrorResponse.withDefaultHeader(RejectionReason.VERSION_NOT_SUPPORTED, "Outbound model version not supported.", connector.getId(), connector.getOutboundModelVersion());
         }
 
-        if (requestMessage.getRequestedElement() != null) {
-            UUID resourceId = messageUtils.uuidFromUri(requestMessage.getRequestedElement());
+        if (message.getRequestedElement() != null) {
+            UUID resourceId = messageUtils.uuidFromUri(message.getRequestedElement());
 
             try {
                 Resource resource = offeredResourceService.getOfferedResources().get(resourceId);
