@@ -1,9 +1,7 @@
 package de.fraunhofer.isst.dataspaceconnector.message;
 
 import de.fraunhofer.iais.eis.*;
-import de.fraunhofer.iais.eis.util.TypedLiteral;
-import de.fraunhofer.iais.eis.util.Util;
-import de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestService;
+import de.fraunhofer.isst.dataspaceconnector.model.SentMessage;
 import de.fraunhofer.isst.dataspaceconnector.services.negotiation.MessageService;
 import de.fraunhofer.isst.dataspaceconnector.services.resource.OfferedResourceService;
 import de.fraunhofer.isst.ids.framework.configuration.ConfigurationContainer;
@@ -22,7 +20,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.UUID;
 
 /**
  * This @{@link ContractAgreementMessageHandler} handles all incoming messages
@@ -88,15 +85,15 @@ public class ContractAgreementMessageHandler implements MessageHandler<ContractA
         // find artifact id of the previous send artifact request message (correlation message of the incoming contract agreement message)
         try {
             URI messageId = message.getCorrelationMessage();
-            for (String messageAsString : messageService.getMessages()) {
-                ArtifactRequestMessage artifactRequestMessage = serializerProvider.getSerializer().deserialize(messageAsString, ArtifactRequestMessage.class);
+            for (SentMessage m : messageService.getMessages()) {
+                ArtifactRequestMessage artifactRequestMessage = serializerProvider.getSerializer().deserialize(m.getMessage(), ArtifactRequestMessage.class);
                 if (artifactRequestMessage.getId().equals(messageId)) {
                     artifactId = artifactRequestMessage.getRequestedArtifact();
                 }
             }
         } catch (IOException e) {
             LOGGER.error("Deserialization error: {}" + e.getMessage());
-            return ErrorResponse.withDefaultHeader(RejectionReason.INTERNAL_RECIPIENT_ERROR, "", connector.getId(), connector.getOutboundModelVersion());
+            return ErrorResponse.withDefaultHeader(RejectionReason.INTERNAL_RECIPIENT_ERROR, "INTERNAL RECIPIENT ERROR", connector.getId(), connector.getOutboundModelVersion());
         }
 
         // send an artifact request message without any payload to the data provider
