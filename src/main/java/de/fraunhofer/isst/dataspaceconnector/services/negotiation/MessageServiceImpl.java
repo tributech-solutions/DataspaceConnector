@@ -1,5 +1,6 @@
 package de.fraunhofer.isst.dataspaceconnector.services.negotiation;
 
+import de.fraunhofer.isst.dataspaceconnector.model.SentMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,12 +29,12 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
-    public void addMessage(String message) {
+    public void addMessage(SentMessage message) {
         messageRepository.save(message);
     }
 
     @Override
-    public List<String> getMessages() {
+    public List<SentMessage> getMessages() {
         return messageRepository.findAll();
     }
 }
