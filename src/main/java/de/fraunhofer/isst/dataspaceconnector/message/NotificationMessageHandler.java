@@ -1,13 +1,19 @@
 package de.fraunhofer.isst.dataspaceconnector.message;
 
-import de.fraunhofer.iais.eis.DescriptionRequestMessageImpl;
+import de.fraunhofer.iais.eis.Connector;
+import de.fraunhofer.iais.eis.MessageProcessedNotificationMessageBuilder;
 import de.fraunhofer.iais.eis.NotificationMessageImpl;
+import de.fraunhofer.iais.eis.util.Util;
+import de.fraunhofer.isst.ids.framework.configuration.ConfigurationContainer;
 import de.fraunhofer.isst.ids.framework.messaging.core.handler.api.MessageHandler;
 import de.fraunhofer.isst.ids.framework.messaging.core.handler.api.SupportedMessageType;
+import de.fraunhofer.isst.ids.framework.messaging.core.handler.api.model.BodyResponse;
 import de.fraunhofer.isst.ids.framework.messaging.core.handler.api.model.MessagePayload;
 import de.fraunhofer.isst.ids.framework.messaging.core.handler.api.model.MessageResponse;
+import de.fraunhofer.isst.ids.framework.spring.starter.TokenProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -26,6 +32,15 @@ public class NotificationMessageHandler implements MessageHandler<NotificationMe
     /** Constant <code>LOGGER</code> */
     public static final Logger LOGGER = LoggerFactory.getLogger(NotificationMessageHandler.class);
 
+    private final TokenProvider tokenProvider;
+    private final Connector connector;
+
+    @Autowired
+    public NotificationMessageHandler(ConfigurationContainer configurationContainer, TokenProvider tokenProvider) {
+        this.tokenProvider = tokenProvider;
+        this.connector = configurationContainer.getConnector();
+    }
+
     /**
      * {@inheritDoc}
      *
@@ -33,8 +48,16 @@ public class NotificationMessageHandler implements MessageHandler<NotificationMe
      * the messagePayload-InputStream is converted to a String.
      */
     @Override
-    public MessageResponse handleMessage(NotificationMessageImpl requestMessage, MessagePayload messagePayload) {
-        LOGGER.info("USAGE LOGGED: " + messagePayload);
-        return null;
+    public MessageResponse handleMessage(NotificationMessageImpl message, MessagePayload messagePayload) {
+        LOGGER.info("Message received: " + messagePayload);
+        return BodyResponse.create(new MessageProcessedNotificationMessageBuilder()
+                ._securityToken_(tokenProvider.getTokenJWS())
+                ._correlationMessage_(message.getId())
+                ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
+                ._issuerConnector_(connector.getId())
+                ._modelVersion_(connector.getOutboundModelVersion())
+                ._senderAgent_(connector.getId())
+                ._recipientConnector_(Util.asList(message.getIssuerConnector()))
+                .build(), "Message received.");
     }
 }
