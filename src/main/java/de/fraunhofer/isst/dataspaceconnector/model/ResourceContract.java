@@ -26,7 +26,7 @@ public class ResourceContract {
     private URI resourceId;
 
     @JsonProperty("contract")
-    @Column(columnDefinition = "BYTEA")
+    @Column(columnDefinition = "TEXT")
     private String contract;
 
     /**

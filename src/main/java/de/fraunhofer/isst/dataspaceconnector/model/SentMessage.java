@@ -22,7 +22,7 @@ public class SentMessage {
     private UUID id;
 
     @JsonProperty("message")
-    @Column(columnDefinition = "BYTEA")
+    @Column(columnDefinition = "TEXT")
     private String message;
 
     /**
