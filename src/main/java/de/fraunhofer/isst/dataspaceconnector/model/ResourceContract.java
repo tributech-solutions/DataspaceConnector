@@ -1,11 +1,9 @@
 package de.fraunhofer.isst.dataspaceconnector.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import de.fraunhofer.iais.eis.Contract;
+import lombok.Data;
 
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.net.URI;
 import java.util.UUID;
 
@@ -15,6 +13,9 @@ import java.util.UUID;
  * @author Julia Pampus
  * @version $Id: $Id
  */
+@Data
+@Entity
+@Table
 public class ResourceContract {
     @Id
     @GeneratedValue
@@ -26,7 +27,7 @@ public class ResourceContract {
 
     @JsonProperty("contract")
     @Column(columnDefinition = "BYTEA")
-    private Contract contract;
+    private String contract;
 
     /**
      * <p>Constructor for ResourceContract.</p>
@@ -39,9 +40,9 @@ public class ResourceContract {
      *
      * @param pid a {@link java.util.UUID} object.
      * @param resourceId a {@link java.util.UUID} object.
-     * @param contract a {@link de.fraunhofer.iais.eis.Contract} object.
+     * @param contract a {@link java.lang.String} object.
      */
-    public ResourceContract(UUID pid, URI resourceId, Contract contract) {
+    public ResourceContract(UUID pid, URI resourceId, String contract) {
         this.pid = pid;
         this.resourceId = resourceId;
         this.contract = contract;
@@ -86,18 +87,18 @@ public class ResourceContract {
     /**
      * <p>Getter for the field <code>contract</code>.</p>
      *
-     * @return a {@link de.fraunhofer.iais.eis.Contract} object.
+     * @return a {@link java.lang.String} object.
      */
-    public Contract getContract() {
+    public String getContract() {
         return contract;
     }
 
     /**
      * <p>Setter for the field <code>contract</code>.</p>
      *
-     * @param contract a {@link de.fraunhofer.iais.eis.Contract} object.
+     * @param contract a {@link java.lang.String} object.
      */
-    public void setContract(Contract contract) {
+    public void setContract(String contract) {
         this.contract = contract;
     }
 }

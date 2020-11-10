@@ -219,7 +219,7 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
         }
 
         // save contract to contract repository
-        contractService.addContract(new ResourceContract(UUID.randomUUID(), resourceUri, contractAgreement));
+        contractService.addContract(new ResourceContract(UUID.randomUUID(), resourceUri, contractAgreement.toRdf()));
         LOGGER.info("Saved message to database: " + contractAgreement.getId());
 
         // send response to the data consumer
@@ -263,13 +263,19 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
     private MessageResponse accessControl(URI contractId) {
         LOGGER.info("Check for resource with contractId " + contractId);
         for (ResourceContract rc : contractService.getContracts()) {
-            if (rc.getContract().getId() == contractId) {
-                URI rid = rc.getResourceId();
-                if (messageUtils.uuidFromUri(rid) != resourceId) {
-                    LOGGER.error("Wrong contract.");
-                    return ErrorResponse.withDefaultHeader(RejectionReason.BAD_PARAMETERS, "The contract agreement does not matches the found resource. " +
-                            "Please refer to the right one.", connector.getId(), connector.getOutboundModelVersion());
+            try {
+                ContractAgreement contract = serializerProvider.getSerializer().deserialize(rc.getContract(), ContractAgreement.class);
+                if (contract.getId() == contractId) {
+                    URI rid = rc.getResourceId();
+                    if (messageUtils.uuidFromUri(rid) != resourceId) {
+                        LOGGER.error("Wrong contract.");
+                        return ErrorResponse.withDefaultHeader(RejectionReason.BAD_PARAMETERS, "The contract agreement does not matches the found resource. " +
+                                "Please refer to the right one.", connector.getId(), connector.getOutboundModelVersion());
+                    }
                 }
+            } catch (IOException e) {
+                LOGGER.error("Contract could not be deserialized: {}" + e.getMessage());
+                return ErrorResponse.withDefaultHeader(RejectionReason.INTERNAL_RECIPIENT_ERROR, "INTERNAL RECIPIENT ERROR", connector.getId(), connector.getOutboundModelVersion());
             }
         }
 
