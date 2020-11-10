@@ -58,7 +58,7 @@ public class RequestServiceImpl implements RequestService {
                 .build();
 
         MultipartBody body = InfomodelMessageBuilder.messageWithString(message, "");
-        LOGGER.info("TO IMPLEMENT | NOT SENT: " + body);
+        LOGGER.info("TO CLEARING HOUSE | NOT SENT: " + body);
 //        return idsHttpService.send(body, URI.create(recipient)); TODO send log messages
         return null;
     }
@@ -76,8 +76,27 @@ public class RequestServiceImpl implements RequestService {
                 .build();
 
         MultipartBody body = InfomodelMessageBuilder.messageWithString(message, "");
-        LOGGER.info("TO IMPLEMENT | NOT SENT: " + body);
+        LOGGER.info("TO PARTICIPANT | NOT SENT: " + body);
 //        return idsHttpService.send(body, URI.create(recipient)); TODO send notification messages
         return null;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void sendContractAgreementMessage(ContractAgreement contractAgreement) throws IOException {
+        String clearingHouse = "";
+        ContractAgreementMessage message = new ContractAgreementMessageBuilder()
+                ._securityToken_(tokenProvider.getTokenJWS())
+                ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
+                ._issuerConnector_(connector.getId())
+                ._modelVersion_(connector.getOutboundModelVersion())
+                ._senderAgent_(connector.getId())
+                ._recipientConnector_(de.fraunhofer.iais.eis.util.Util.asList(URI.create(clearingHouse)))
+                ._transferContract_(contractAgreement.getId())
+                .build();
+
+        MultipartBody body = InfomodelMessageBuilder.messageWithString(message, contractAgreement.toRdf());
+        LOGGER.info("TO CLEARING HOUSE | NOT SENT: " + body);
+//        return idsHttpService.send(body, URI.create(recipient)); TODO send contract agreement messages
     }
 }
