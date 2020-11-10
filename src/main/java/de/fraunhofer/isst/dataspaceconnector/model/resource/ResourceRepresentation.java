@@ -48,7 +48,9 @@ public class ResourceRepresentation implements Serializable {
         @JsonProperty("https-get-basicauth")
         HTTPS_GET_BASICAUTH("https-get-basicauth"),
         @JsonProperty("mongodb")
-        MONGODB("mongodb");
+        MONGODB("mongodb"),
+        @JsonProperty("minio")
+        MINIO("minio");
 
         private final String type;
 

@@ -322,7 +322,10 @@ public class OfferedResourceServiceImpl implements OfferedResourceService {
                 return httpUtils.sendHttpsGetRequestWithBasicAuth(address, username, password);
             case MONGODB:
                 // TODO
-                throw new Exception("Could not retrieve data.");
+                throw new Exception("Database type not supported.");
+            case MINIO:
+                // TODO
+                throw new Exception("Database type not supported.");
             default:
                 throw new Exception("Could not retrieve data.");
         }
