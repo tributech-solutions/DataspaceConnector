@@ -33,9 +33,7 @@ import java.util.ArrayList;
 @RestController
 @Tag(name = "Connector: Selfservice", description = "Endpoints for connector information")
 public class MainController {
-    /**
-     * Constant <code>LOGGER</code>
-     */
+    /** Constant <code>LOGGER</code> */
     public static final Logger LOGGER = LoggerFactory.getLogger(MainController.class);
 
     private TokenProvider tokenProvider;
@@ -80,7 +78,7 @@ public class MainController {
     public ResponseEntity<Object> getPublicSelfDescription() {
         try {
             BaseConnectorImpl connector = (BaseConnectorImpl) configurationContainer.getConnector();
-            connector.getResourceCatalog().clear();
+            connector.setResourceCatalog(null);
             return new ResponseEntity<>(serializerProvider.getSerializer().serialize(connector), HttpStatus.OK);
         } catch (IOException e) {
             LOGGER.error("Could not create self-description: {}", e.getMessage());
@@ -183,7 +181,7 @@ public class MainController {
     @RequestMapping(value = "/admin/api/example/usage-policy", method = RequestMethod.POST)
     @ResponseBody
     public ResponseEntity<Object> getExampleUsagePolicy(@Parameter(description = "The policy pattern.", required = true)
-                                                        @RequestParam("pattern") PolicyHandler.Pattern pattern) {
+                                                            @RequestParam("pattern") PolicyHandler.Pattern pattern) {
         ContractOffer contractOffer = null;
 
         switch (pattern) {
