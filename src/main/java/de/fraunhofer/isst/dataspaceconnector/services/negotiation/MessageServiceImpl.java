@@ -1,7 +1,5 @@
 package de.fraunhofer.isst.dataspaceconnector.services.negotiation;
 
-import de.fraunhofer.iais.eis.Message;
-import de.fraunhofer.isst.dataspaceconnector.services.resource.OfferedResourceServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,12 +28,12 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
-    public void addMessage(Message message) {
+    public void addMessage(String message) {
         messageRepository.save(message);
     }
 
     @Override
-    public List<Message> getMessages() {
+    public List<String> getMessages() {
         return messageRepository.findAll();
     }
 }

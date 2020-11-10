@@ -1,7 +1,5 @@
 package de.fraunhofer.isst.dataspaceconnector.services.negotiation;
 
-import de.fraunhofer.iais.eis.Message;
-
 import java.util.List;
 
 /**
@@ -14,14 +12,14 @@ public interface MessageService {
     /**
      * <p>addMessage.</p>
      *
-     * @param message a {@link de.fraunhofer.iais.eis.Message} object.
+     * @param message a {@link de.fraunhofer.iais.eis.Message} object as string.
      */
-    void addMessage(Message message);
+    void addMessage(String message);
 
     /**
      * <p>getMessages.</p>
      *
-     * @return a list of {@link de.fraunhofer.iais.eis.Message} objects.
+     * @return a list of {@link de.fraunhofer.iais.eis.Message} objects as strings.
      */
-    List<Message> getMessages();
+    List<String> getMessages();
 }
