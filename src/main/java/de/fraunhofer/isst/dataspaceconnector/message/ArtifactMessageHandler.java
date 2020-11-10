@@ -219,7 +219,7 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
         }
 
         // save contract to contract repository
-        contractService.addContract(new ResourceContract(UUID.randomUUID(), resourceUri, contractAgreement.toRdf()));
+        contractService.addContract(new ResourceContract(resourceUri, contractAgreement.toRdf()));
         LOGGER.info("Saved message to database: " + contractAgreement.getId());
 
         // send response to the data consumer

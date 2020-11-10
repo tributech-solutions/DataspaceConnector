@@ -38,12 +38,10 @@ public class ResourceContract {
     /**
      * <p>Constructor for ResourceContract.</p>
      *
-     * @param pid a {@link java.util.UUID} object.
      * @param resourceId a {@link java.util.UUID} object.
      * @param contract a {@link java.lang.String} object.
      */
-    public ResourceContract(UUID pid, URI resourceId, String contract) {
-        this.pid = pid;
+    public ResourceContract(URI resourceId, String contract) {
         this.resourceId = resourceId;
         this.contract = contract;
     }

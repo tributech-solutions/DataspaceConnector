@@ -1,6 +1,7 @@
 package de.fraunhofer.isst.dataspaceconnector.services.communication;
 
 import de.fraunhofer.iais.eis.*;
+import de.fraunhofer.isst.dataspaceconnector.model.SentMessage;
 import de.fraunhofer.isst.dataspaceconnector.services.IdsUtils;
 import de.fraunhofer.isst.dataspaceconnector.services.negotiation.MessageService;
 import de.fraunhofer.isst.ids.framework.configuration.ConfigurationContainer;
@@ -94,7 +95,7 @@ public class ConnectorRequestServiceImpl implements ConnectorRequestService {
                 ._recipientConnector_(de.fraunhofer.iais.eis.util.Util.asList(recipient))
                 .build();
 
-        messageService.addMessage(requestMessage.toRdf());
+        messageService.addMessage(new SentMessage(requestMessage.toRdf()));
         LOGGER.info("Saved message to database: " + requestMessage.getId());
 
         MultipartBody body = InfomodelMessageBuilder.messageWithString(requestMessage, payload);
