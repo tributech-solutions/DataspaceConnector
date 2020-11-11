@@ -32,11 +32,4 @@ public interface ConnectorRequestService {
      * @throws java.io.IOException if any.
      */
     Response sendDescriptionRequestMessage(URI recipient, URI artifact) throws IOException;
-
-    /**
-     * <p>sendContractRequestMessage.</p>
-     *
-     * @return a {@link okhttp3.Response} object.
-     */
-    Response sendContractRequestMessage();
 }

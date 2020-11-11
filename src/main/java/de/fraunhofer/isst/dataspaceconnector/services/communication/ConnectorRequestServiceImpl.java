@@ -135,10 +135,4 @@ public class ConnectorRequestServiceImpl implements ConnectorRequestService {
         MultipartBody body = InfomodelMessageBuilder.messageWithString(requestMessage, "");
         return idsHttpService.send(body, recipient);
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public Response sendContractRequestMessage() {
-        return null;
-    }
 }
