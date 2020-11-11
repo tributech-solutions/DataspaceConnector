@@ -174,9 +174,9 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
             ContractOffer contractOffer = serializerProvider.getSerializer().deserialize(resourceMetadata.getPolicy(), ContractOffer.class);
 
             // check if the contract request has the same content as the contract offer provided with the resource
-            if (contractRequest.getObligation() == contractOffer.getObligation()
-                    && contractRequest.getPermission() == contractOffer.getPermission()
-                    && contractRequest.getProhibition() == contractOffer.getProhibition()) {
+            if (policyHandler.compareRule(contractRequest.getObligation(), contractOffer.getObligation())
+                    && policyHandler.compareRule(contractRequest.getPermission(), contractOffer.getPermission())
+                    && policyHandler.compareRule(contractRequest.getProhibition(), contractOffer.getProhibition())) {
                 return acceptContract(contractRequest);
             } else {
                 return rejectContract();
@@ -252,7 +252,7 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
                 ._recipientConnector_(Util.asList(message.getIssuerConnector()))
                 ._rejectionReason_(RejectionReason.BAD_PARAMETERS)
                 ._contractRejectionReason_(new TypedLiteral("Contract not accepted.", "en"))
-                .build(), "");
+                .build(), "Contract rejected.");
     }
 
     /**

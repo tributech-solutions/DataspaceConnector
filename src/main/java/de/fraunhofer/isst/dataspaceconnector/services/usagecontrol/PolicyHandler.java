@@ -1,5 +1,6 @@
 package de.fraunhofer.isst.dataspaceconnector.services.usagecontrol;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import de.fraunhofer.iais.eis.*;
 import de.fraunhofer.isst.dataspaceconnector.model.RequestedResource;
 import de.fraunhofer.isst.ids.framework.spring.starter.SerializerProvider;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class provides policy pattern recognition and calls the {@link de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyVerifier} on data request or access.
@@ -148,9 +150,47 @@ public class PolicyHandler {
         }
     }
 
+    /**
+     * Compare the content of to rule lists to each other.
+     *
+     * @param request List of rules of the contract request.
+     * @param offer List of rules of the contract offer.
+     * @return True is the content is equal, false if any difference is detected.
+     */
+    public boolean compareRule(ArrayList<? extends Rule> request, ArrayList<? extends Rule> offer) {
+        if (request == null && offer == null) {
+            return true;
+        } else if (request == null) {
+            return false;
+        } else if (offer == null) {
+            return false;
+        }
+
+        if (request.size() != offer.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < request.size(); i++) {
+            Rule requestRule = request.get(i);
+            Rule offerRule = offer.get(i);
+            try {
+                String requestString = serializerProvider.getSerializer().serializePlainJson(requestRule);
+                String offerString = serializerProvider.getSerializer().serializePlainJson(offerRule);
+                if (!requestString.equals(offerString)) {
+                    return false;
+                }
+            } catch (JsonProcessingException e) {
+                return false;
+            }
+            i++;
+        }
+        return true;
+    }
+
     public Contract getContract() {
         return contract;
     }
+
 
     public enum Pattern {
         /**
