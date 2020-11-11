@@ -93,6 +93,7 @@ public class RequestServiceImpl implements RequestService {
                 ._senderAgent_(connector.getId())
                 ._recipientConnector_(de.fraunhofer.iais.eis.util.Util.asList(URI.create(clearingHouse)))
                 ._transferContract_(contractAgreement.getId())
+                ._correlationMessage_(null)
                 .build();
 
         MultipartBody body = InfomodelMessageBuilder.messageWithString(message, contractAgreement.toRdf());
