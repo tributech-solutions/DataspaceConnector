@@ -10,6 +10,7 @@ import de.fraunhofer.isst.dataspaceconnector.services.communication.RequestServi
 import de.fraunhofer.isst.dataspaceconnector.services.negotiation.ContractService;
 import de.fraunhofer.isst.dataspaceconnector.services.resource.OfferedResourceService;
 import de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyHandler;
+import de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.NegotiationHandler;
 import de.fraunhofer.isst.ids.framework.configuration.ConfigurationContainer;
 import de.fraunhofer.isst.ids.framework.exceptions.HttpClientException;
 import de.fraunhofer.isst.ids.framework.messaging.core.handler.api.MessageHandler;
@@ -61,6 +62,7 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
     private MessageUtils messageUtils;
     private IdsUtils idsUtils;
     private RequestService requestService;
+    private NegotiationHandler negotiationHandler;
 
     private ResourceMetadata resourceMetadata;
     private ArtifactRequestMessageImpl message;
@@ -76,13 +78,15 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
      * @param idsUtils a {@link IdsUtils} object.
      * @param tokenProvider a {@link de.fraunhofer.isst.ids.framework.spring.starter.TokenProvider} object.
      * @param policyHandler a {@link de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyHandler} object.
+     * @param negotiationHandler a {@link de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.NegotiationHandler} object.
      * @param messageUtils a {@link MessageUtils} object.
      * @param serializeProvider a {@link de.fraunhofer.isst.ids.framework.spring.starter.SerializerProvider} object.
      * @param requestService a {@link RequestService} object.
      */
     public ArtifactMessageHandler(OfferedResourceService offeredResourceService, ContractService contractService,
-                                  TokenProvider tokenProvider, ConfigurationContainer configurationContainer, PolicyHandler policyHandler,
-                                  IdsUtils idsUtils, MessageUtils messageUtils, SerializerProvider serializerProvider, RequestService requestService) {
+                                  TokenProvider tokenProvider, ConfigurationContainer configurationContainer,
+                                  PolicyHandler policyHandler, IdsUtils idsUtils, MessageUtils messageUtils,
+                                  SerializerProvider serializerProvider, RequestService requestService, NegotiationHandler negotiationHandler) {
         this.offeredResourceService = offeredResourceService;
         this.contractService = contractService;
         this.tokenProvider = tokenProvider;
@@ -92,6 +96,7 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
         this.messageUtils = messageUtils;
         this.serializerProvider = serializerProvider;
         this.requestService = requestService;
+        this.negotiationHandler = negotiationHandler;
     }
 
     /**
@@ -115,14 +120,19 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
             resourceId = messageUtils.uuidFromUri(getRequestedResource(artifactId));
             resourceMetadata = offeredResourceService.getMetadata(resourceId);
 
-            // check if a transfer contract was added to the artifact message
-            if (message.getTransferContract() == null) {
-                // check if the message payload is empty
-                if (messagePayload != null) {
-                    return checkContractOffer(messagePayload);
+            // check if policy negotiation should be started or not (for compatibility with IDS connectors that does not support policy negotiation)
+            if (negotiationHandler.isStatus()) {
+                // check if a transfer contract was added to the artifact message
+                if (message.getTransferContract() == null) {
+                    // check if the message payload is empty
+                    if (messagePayload != null) {
+                        return checkContractOffer(messagePayload);
+                    } else {
+                        LOGGER.error("Contract is missing.");
+                        return ErrorResponse.withDefaultHeader(RejectionReason.BAD_PARAMETERS, "Missing contract request.", connector.getId(), connector.getOutboundModelVersion());
+                    }
                 } else {
-                    LOGGER.error("Contract is missing.");
-                    return ErrorResponse.withDefaultHeader(RejectionReason.BAD_PARAMETERS, "Missing contract request.", connector.getId(), connector.getOutboundModelVersion());
+                    return accessControl(message.getTransferContract());
                 }
             } else {
                 return accessControl(message.getTransferContract());
@@ -195,6 +205,7 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
      */
     private MessageResponse acceptContract(ContractRequest contractRequest) {
         LOGGER.info("Contract accepted.");
+
         Calendar c = Calendar.getInstance();
         c.setTime(new Date());
         c.add(Calendar.YEAR, 1);
@@ -212,27 +223,36 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
 
         // send ContractAgreement to the ClearingHouse
         try {
-            requestService.sendContractAgreementMessage(contractAgreement);
+            requestService.sendContractAgreementMessage(contractAgreement, message.getId());
         } catch (HttpClientException | IOException e) {
             LOGGER.error("Message to clearing house could not be sent: {}" + e.getMessage());
-            // TODO try send later
+            // TODO try again later
+        }
+
+        // send ContractAgreement to the consumer
+        try {
+            requestService.sendContractAgreementMessage(new ContractAgreementMessageBuilder()
+                    ._securityToken_(tokenProvider.getTokenJWS())
+                    ._correlationMessage_(message.getId())
+                    ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
+                    ._issuerConnector_(connector.getId())
+                    ._modelVersion_(connector.getOutboundModelVersion())
+                    ._senderAgent_(connector.getId())
+                    ._recipientConnector_(Util.asList(message.getIssuerConnector()))
+                    ._transferContract_(contractAgreement.getId())
+                    .build(), contractAgreement);
+        } catch (HttpClientException | IOException e) {
+            LOGGER.error("Message to consumer could not be sent: {}" + e.getMessage());
+            return ErrorResponse.withDefaultHeader(RejectionReason.INTERNAL_RECIPIENT_ERROR, "Not able to send the contract agreement message to the consumer.", connector.getId(), connector.getOutboundModelVersion());
         }
 
         // save contract to contract repository
         contractService.addContract(new ResourceContract(resourceUri, contractAgreement.toRdf()));
-        LOGGER.info("Saved message to database: " + contractAgreement.getId());
+        LOGGER.info("Saved contract to database: " + contractAgreement.getId());
 
         // send response to the data consumer
-        return BodyResponse.create(new ContractAgreementMessageBuilder()
-                ._securityToken_(tokenProvider.getTokenJWS())
-                ._correlationMessage_(message.getId())
-                ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
-                ._issuerConnector_(connector.getId())
-                ._modelVersion_(connector.getOutboundModelVersion())
-                ._senderAgent_(connector.getId())
-                ._recipientConnector_(Util.asList(message.getIssuerConnector()))
-                ._transferContract_(contractAgreement.getId())
-                .build(), contractAgreement.toRdf());
+//        return BodyResponse.create();
+        return null;
     }
 
     /**
