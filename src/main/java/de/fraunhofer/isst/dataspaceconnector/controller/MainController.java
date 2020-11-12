@@ -198,15 +198,6 @@ public class MainController {
                                 .build()))
                         .build();
                 break;
-            case PROHIBIT_ACCESS:
-                contractOffer = new ContractOfferBuilder()
-                        ._prohibition_(Util.asList(new ProhibitionBuilder()
-                                ._title_(Util.asList(new TypedLiteral("Example Usage Policy")))
-                                ._description_(Util.asList(new TypedLiteral("prohibit-access")))
-                                ._action_(Util.asList(Action.USE))
-                                .build()))
-                        .build();
-                break;
             case N_TIMES_USAGE:
                 contractOffer = new NotMoreThanNOfferBuilder()
                         ._permission_(Util.asList(new PermissionBuilder()

@@ -57,10 +57,6 @@ public class PolicyHandler {
             throw new IOException("The policy could not be read. Please check the policy syntax.");
         }
 
-        if (contract.getProhibition() != null && contract.getProhibition().get(0) != null) {
-            return Pattern.PROHIBIT_ACCESS;
-        }
-
         if (contract.getPermission() != null && contract.getPermission().get(0) != null) {
             Permission permission = contract.getPermission().get(0);
             ArrayList<? extends Constraint> constraints = permission.getConstraint();
@@ -113,8 +109,6 @@ public class PolicyHandler {
         switch (getPattern(policy)) {
             case PROVIDE_ACCESS:
                 return policyVerifier.allowAccess();
-            case PROHIBIT_ACCESS:
-                return policyVerifier.inhibitAccess();
             case USAGE_DURING_INTERVAL:
             case USAGE_UNTIL_DELETION:
                 return policyVerifier.checkInterval(contract);
@@ -197,11 +191,6 @@ public class PolicyHandler {
          * Standard pattern to allow unrestricted access.
          */
         PROVIDE_ACCESS("PROVIDE_ACCESS"),
-        /**
-         * Default pattern if no other is detected.
-         * v2.0: NO_POLICY("no-policy")
-         */
-        PROHIBIT_ACCESS("PROHIBIT_ACCESS"),
         /**
          * Type: NotMoreThanN
          * v2.0: COUNT_ACCESS("count-access")
