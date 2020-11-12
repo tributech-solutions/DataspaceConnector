@@ -12,9 +12,9 @@ import org.springframework.stereotype.Service;
  * @version $Id: $Id
  */
 @Service
-public class PolicyNegotiation {
+public class NegotiationHandler {
     /** Constant <code>LOGGER</code> */
-    public static final Logger LOGGER = LoggerFactory.getLogger(PolicyNegotiation.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(NegotiationHandler.class);
 
     private boolean status;
 
@@ -23,7 +23,7 @@ public class PolicyNegotiation {
      * according endpoint in {@link de.fraunhofer.isst.dataspaceconnector.controller.MainController}.</p>
      */
     @Autowired
-    public PolicyNegotiation() {
+    public NegotiationHandler() {
         status = true;
     }
 

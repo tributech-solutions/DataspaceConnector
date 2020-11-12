@@ -7,7 +7,7 @@ import de.fraunhofer.iais.eis.util.Util;
 import de.fraunhofer.isst.dataspaceconnector.services.resource.OfferedResourceService;
 import de.fraunhofer.isst.dataspaceconnector.services.resource.RequestedResourceService;
 import de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyHandler;
-import de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyNegotiation;
+import de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.NegotiationHandler;
 import de.fraunhofer.isst.ids.framework.configuration.ConfigurationContainer;
 import de.fraunhofer.isst.ids.framework.spring.starter.SerializerProvider;
 import de.fraunhofer.isst.ids.framework.spring.starter.TokenProvider;
@@ -45,7 +45,7 @@ public class MainController {
     private RequestedResourceService requestedResourceService;
 
     private PolicyHandler policyHandler;
-    private PolicyNegotiation policyNegotiation;
+    private NegotiationHandler negotiationHandler;
 
     @Autowired
     /**
@@ -57,18 +57,18 @@ public class MainController {
      * @param serializerProvider a {@link de.fraunhofer.isst.ids.framework.spring.starter.SerializerProvider} object.
      * @param offeredResourceService a {@link de.fraunhofer.isst.dataspaceconnector.services.resource.OfferedResourceService} object.
      * @param requestedResourceService a {@link de.fraunhofer.isst.dataspaceconnector.services.resource.RequestedResourceService} object.
-     * @param policyNegotiation a {@link de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyNegotiation} object.
+     * @param policyNegotiation a {@link de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.NegotiationHandler} object.
      */
     public MainController(TokenProvider tokenProvider, ConfigurationContainer configurationContainer,
                           SerializerProvider serializerProvider, OfferedResourceService offeredResourceService,
-                          RequestedResourceService requestedResourceService, PolicyHandler policyHandler, PolicyNegotiation policyNegotiation) {
+                          RequestedResourceService requestedResourceService, PolicyHandler policyHandler, NegotiationHandler negotiationHandler) {
         this.tokenProvider = tokenProvider;
         this.configurationContainer = configurationContainer;
         this.serializerProvider = serializerProvider;
         this.offeredResourceService = offeredResourceService;
         this.requestedResourceService = requestedResourceService;
         this.policyHandler = policyHandler;
-        this.policyNegotiation = policyNegotiation;
+        this.negotiationHandler = negotiationHandler;
     }
 
     /**
@@ -313,9 +313,9 @@ public class MainController {
     @RequestMapping(value = {"negotiation"}, method = RequestMethod.PUT)
     @ResponseBody
     public ResponseEntity<Object> setNegotiationStatus(@RequestParam("status") boolean status) {
-        policyNegotiation.setStatus(status);
+        negotiationHandler.setStatus(status);
 
-        if (policyNegotiation.isStatus()) {
+        if (negotiationHandler.isStatus()) {
             return new ResponseEntity<>("Policy Negotiation was turned on.", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Policy Negotiation was turned off.", HttpStatus.OK);
@@ -331,7 +331,7 @@ public class MainController {
     @RequestMapping(value = {"negotiation"}, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<Object> getNegotiationStatus() {
-        if (policyNegotiation.isStatus()) {
+        if (negotiationHandler.isStatus()) {
             return new ResponseEntity<>("Policy Negotiation is turned on.", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Policy Negotiation is turned off.", HttpStatus.OK);
