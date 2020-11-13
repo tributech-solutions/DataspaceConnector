@@ -134,7 +134,7 @@ public class IdsUtils {
      * @param string The string.
      * @return The XMLGregorianCalendar object or null.
      */
-    private XMLGregorianCalendar stringToDate(String string) {
+    public XMLGregorianCalendar stringToDate(String string) {
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
         Date date = null;
         try {
