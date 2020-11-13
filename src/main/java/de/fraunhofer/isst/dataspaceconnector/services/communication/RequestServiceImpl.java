@@ -39,8 +39,7 @@ public class RequestServiceImpl implements RequestService {
      * @param tokenProvider a {@link de.fraunhofer.isst.ids.framework.spring.starter.TokenProvider} object.
      * @param idsHttpService a {@link de.fraunhofer.isst.ids.framework.spring.starter.IDSHttpService} object.
      */
-    public RequestServiceImpl(ConfigurationContainer configurationContainer, TokenProvider tokenProvider,
-                              IDSHttpService idsHttpService) {
+    public RequestServiceImpl(ConfigurationContainer configurationContainer, TokenProvider tokenProvider, IDSHttpService idsHttpService) {
         this.connector = configurationContainer.getConnector();
         this.tokenProvider = tokenProvider;
         this.idsHttpService = idsHttpService;
@@ -83,7 +82,7 @@ public class RequestServiceImpl implements RequestService {
 
     /** {@inheritDoc} */
     @Override
-    public void sendContractAgreementMessage(ContractAgreement contractAgreement) throws IOException {
+    public void sendContractAgreementMessage(ContractAgreement contractAgreement, URI correlationMessage) throws IOException {
         String clearingHouse = "";
         ContractAgreementMessage message = new ContractAgreementMessageBuilder()
                 ._securityToken_(tokenProvider.getTokenJWS())
@@ -93,7 +92,7 @@ public class RequestServiceImpl implements RequestService {
                 ._senderAgent_(connector.getId())
                 ._recipientConnector_(de.fraunhofer.iais.eis.util.Util.asList(URI.create(clearingHouse)))
                 ._transferContract_(contractAgreement.getId())
-                ._correlationMessage_(null)
+                ._correlationMessage_(correlationMessage)
                 .build();
 
         MultipartBody body = InfomodelMessageBuilder.messageWithString(message, contractAgreement.toRdf());

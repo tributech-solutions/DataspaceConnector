@@ -24,6 +24,18 @@ public interface ConnectorRequestService {
     Response sendArtifactRequestMessage(URI recipient, URI artifact, Contract contract) throws IOException;
 
     /**
+     * <p>sendArtifactRequestMessage.</p>
+     *
+     * @param recipient a {@link java.net.URI} object.
+     * @param artifact a {@link java.net.URI} object.
+     * @param correlationMessage a {@link java.net.URI} object.
+     * @param transferContract a {@link java.net.URI} object.
+     * @return a {@link okhttp3.Response} object.
+     * @throws java.io.IOException if any.
+     */
+    Response sendArtifactRequestMessage(URI recipient, URI artifact, URI correlationMessage, URI transferContract) throws IOException;
+
+    /**
      * <p>sendDescriptionRequestMessage.</p>
      *
      * @param recipient a {@link java.net.URI} object.

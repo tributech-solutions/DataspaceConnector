@@ -1,14 +1,17 @@
 package de.fraunhofer.isst.dataspaceconnector.controller;
 
+import de.fraunhofer.iais.eis.ArtifactResponseMessage;
 import de.fraunhofer.iais.eis.Contract;
 import de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestServiceImpl;
 import de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestServiceUtils;
 import de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyHandler;
 import de.fraunhofer.isst.ids.framework.spring.starter.TokenProvider;
+import de.fraunhofer.isst.ids.framework.util.MultipartStringParser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import okhttp3.Response;
+import org.apache.commons.fileupload.FileUploadException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -56,6 +60,43 @@ public class RequestController {
     }
 
     /**
+     * Actively requests metadata from an external connector by building an ArtifactRequestMessage.
+     *
+     * @param recipient         The target connector uri.
+     * @param requestedArtifact The requested resource uri.
+     * @return OK or error response.
+     * @throws java.io.IOException if any.
+     */
+    @Operation(summary = "Description Request", description = "Request metadata from another IDS connector.")
+    @RequestMapping(value = "/description", method = RequestMethod.POST)
+    @ResponseBody
+    public ResponseEntity<Object> requestMetadata(
+            @Parameter(description = "The URI of the requested IDS connector.", required = true, example = "https://localhost:8080/api/ids/data") @RequestParam("recipient") URI recipient,
+            @Parameter(description = "The URI of the requested resource.", required = false, example = "https://w3id.org/idsa/autogen/resource/a4212311-86e4-40b3-ace3-ef29cd687cf9") @RequestParam(value = "requestedArtifact", required = false) URI requestedArtifact) throws IOException {
+        if (tokenProvider.getTokenJWS() != null) {
+            Response response = requestMessageService.sendDescriptionRequestMessage(recipient, requestedArtifact);
+            String responseAsString = response.body().string();
+
+            String hint = "";
+            if (requestedArtifact != null) {
+                try {
+                    hint = "Key: " + connectorRequestServiceUtils.saveMetadata(responseAsString) + "\n";
+                } catch (Exception e) {
+                    LOGGER.error(e.getMessage());
+                    return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+            }
+            return new ResponseEntity<>(hint
+                    + String.format("Success: %s", (response != null)) + "\n"
+                    + String.format("Body: %s", responseAsString), HttpStatus.OK);
+        } else {
+            LOGGER.error("No DAT token found");
+            return new ResponseEntity<>("Please check your DAT token.", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+
+    /**
      * Actively requests data from an external connector by building an ArtifactRequestMessage.
      *
      * @param recipient         The target connector uri.
@@ -71,15 +112,13 @@ public class RequestController {
     @RequestMapping(value = "/artifact", method = RequestMethod.POST)
     @ResponseBody
     public ResponseEntity<Object> requestData(
-            @Parameter(description = "The URI of the requested IDS connector.", required = true,
-                    example = "https://localhost:8080/api/ids/data") @RequestParam("recipient") URI recipient,
-            @Parameter(description = "The URI of the requested artifact.", required = true,
-                    example = "https://w3id.org/idsa/autogen/artifact/a4212311-86e4-40b3-ace3-ef29cd687cf9")
-            @RequestParam(value = "requestedArtifact") URI requestedArtifact,
+            @Parameter(description = "The URI of the requested IDS connector.", required = true, example = "https://localhost:8080/api/ids/data") @RequestParam("recipient") URI recipient,
+            @Parameter(description = "The URI of the requested artifact.", required = true, example = "https://w3id.org/idsa/autogen/artifact/a4212311-86e4-40b3-ace3-ef29cd687cf9") @RequestParam(value = "requestedArtifact") URI requestedArtifact,
             @Parameter(description = "The contract offer for the requested resource.", required = true) @RequestBody String contractOffer,
             @Parameter(description = "A unique validation key.", required = true) @RequestParam("key") UUID key) throws IOException {
         if (tokenProvider.getTokenJWS() != null) {
             Contract contract;
+            // check input value for contract
             try {
                 policyHandler.getPattern(contractOffer);
                 contract = policyHandler.getContract();
@@ -88,63 +127,21 @@ public class RequestController {
                 return new ResponseEntity<>("This is not a valid policy.", HttpStatus.BAD_REQUEST);
             }
 
+            // check for internal database entry
             if (connectorRequestServiceUtils.resourceExists(key)) {
+                // send artifact request message
                 Response response = requestMessageService.sendArtifactRequestMessage(recipient, requestedArtifact, contract);
-                LOGGER.info("Sent artifact request message with contract request.");
-                String responseAsString = response.body().string();
-
                 try {
-                    connectorRequestServiceUtils.saveData(responseAsString, key);
+                    String responseAsString = response.body().string();
+                    return connectorRequestServiceUtils.checkContractAgreementResponse(responseAsString, key, recipient, requestedArtifact);
                 } catch (Exception e) {
-                    LOGGER.error(e.getMessage());
-                    return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+                    LOGGER.error("Response error: " + e.getMessage());
+                    return new ResponseEntity<>("Policy Negotiation was not successful. Response: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
                 }
-                return new ResponseEntity<>("Saved at: " + key + "\n"
-                        + String.format("Success: %s", (response != null)) + "\n"
-                        + String.format("Body: %s", responseAsString), HttpStatus.OK);
             } else {
                 LOGGER.error("Key is not valid.");
                 return new ResponseEntity<>("Your key is not valid. Please request metadata first.", HttpStatus.FORBIDDEN);
             }
-        } else {
-            LOGGER.error("No DAT token found");
-            return new ResponseEntity<>("Please check your DAT token.", HttpStatus.UNAUTHORIZED);
-        }
-    }
-
-    /**
-     * Actively requests metadata from an external connector by building an ArtifactRequestMessage.
-     *
-     * @param recipient         The target connector uri.
-     * @param requestedArtifact The requested resource uri.
-     * @return OK or error response.
-     * @throws java.io.IOException if any.
-     */
-    @Operation(summary = "Description Request", description = "Request metadata from another IDS connector.")
-    @RequestMapping(value = "/description", method = RequestMethod.POST)
-    @ResponseBody
-    public ResponseEntity<Object> requestMetadata(
-            @Parameter(description = "The URI of the requested IDS connector.", required = true,
-                    example = "https://localhost:8080/api/ids/data") @RequestParam("recipient") URI recipient,
-            @Parameter(description = "The URI of the requested resource.", required = false,
-                    example = "https://w3id.org/idsa/autogen/resource/a4212311-86e4-40b3-ace3-ef29cd687cf9")
-            @RequestParam(value = "requestedArtifact", required = false) URI requestedArtifact) throws IOException {
-        if (tokenProvider.getTokenJWS() != null) {
-            Response response = requestMessageService.sendDescriptionRequestMessage(recipient, requestedArtifact);
-            String responseAsString = response.body().string();
-
-            String hint = "";
-            if (requestedArtifact != null) {
-                try {
-                    hint = "Validation key: " + connectorRequestServiceUtils.saveMetadata(responseAsString) + "\n";
-                } catch (Exception e) {
-                    LOGGER.error(e.getMessage());
-                    return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-                }
-            }
-            return new ResponseEntity<>(hint
-                    + String.format("Success: %s", (response != null)) + "\n"
-                    + String.format("Body: %s", responseAsString), HttpStatus.OK);
         } else {
             LOGGER.error("No DAT token found");
             return new ResponseEntity<>("Please check your DAT token.", HttpStatus.UNAUTHORIZED);

@@ -7,11 +7,16 @@ import de.fraunhofer.isst.dataspaceconnector.model.resource.ResourceRepresentati
 import de.fraunhofer.isst.dataspaceconnector.services.resource.RequestedResourceService;
 import de.fraunhofer.isst.ids.framework.spring.starter.SerializerProvider;
 import de.fraunhofer.isst.ids.framework.util.MultipartStringParser;
+import okhttp3.Response;
+import org.apache.commons.fileupload.FileUploadException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +35,7 @@ public class ConnectorRequestServiceUtils {
 
     private RequestedResourceService requestedResourceService;
     private SerializerProvider serializerProvider;
+    private ConnectorRequestServiceImpl requestMessageService;
 
     @Autowired
     /**
@@ -57,49 +63,22 @@ public class ConnectorRequestServiceUtils {
 
         try {
             serializerProvider.getSerializer().deserialize(header, DescriptionResponseMessage.class);
-//            ObjectMapper mapper = new ObjectMapper();
-//            ResourceMetadata resourceMetadata = mapper.readValue(payload, ResourceMetadata.class);
+        } catch (Exception e) {
+            throw new Exception("Wrong message type: " + header);
+        }
 
-            Resource resource = serializerProvider.getSerializer().deserialize(payload, ResourceImpl.class);
+        Resource resource;
+        try {
+            resource = serializerProvider.getSerializer().deserialize(payload, ResourceImpl.class);
+        } catch (Exception e) {
+            throw new Exception("Metadata could not be deserialized: " + payload);
+        }
+
+        try {
             return requestedResourceService.addResource(deserializeMetadata(resource));
         } catch (Exception e) {
             throw new Exception("Metadata could not be saved: " + e.getMessage());
         }
-    }
-
-    /**
-     * Saves the data string in the internal database.
-     *
-     * @param response The data resource as string.
-     * @param resourceId The resource uuid.
-     * @throws java.lang.Exception if any.
-     */
-    public void saveData(String response, UUID resourceId) throws Exception {
-        Map<String, String> map = MultipartStringParser.stringToMultipart(response);
-        String header = map.get("header");
-        String payload = map.get("payload");
-
-        try {
-            serializerProvider.getSerializer().deserialize(header, ArtifactResponseMessage.class);
-        } catch (Exception e) {
-            throw new Exception("Rejection Message received: " + payload);
-        }
-
-        try {
-            requestedResourceService.addData(resourceId, payload);
-        } catch (Exception e) {
-            throw new Exception("Data could not be saved: " + e.getMessage());
-        }
-    }
-
-    /**
-     * <p>resourceExists.</p>
-     *
-     * @param resourceId a {@link java.util.UUID} object.
-     * @return a boolean.
-     */
-    public boolean resourceExists(UUID resourceId) {
-        return requestedResourceService.getResource(resourceId) != null;
     }
 
     private ResourceMetadata deserializeMetadata(Resource resource) {
@@ -131,5 +110,93 @@ public class ConnectorRequestServiceUtils {
                 resource.getVersion(),
                 representations
         );
+    }
+
+    /**
+     * <p>resourceExists.</p>
+     *
+     * @param resourceId a {@link java.util.UUID} object.
+     * @return a boolean.
+     */
+    public boolean resourceExists(UUID resourceId) {
+        return requestedResourceService.getResource(resourceId) != null;
+    }
+
+    /**
+     *
+     * @param responseString
+     * @param key
+     * @param recipient
+     * @param requestedArtifact
+     * @return
+     * @throws Exception
+     */
+    public ResponseEntity<Object> checkContractAgreementResponse(String responseString, UUID key, URI recipient, URI requestedArtifact) throws Exception {
+        Map<String, String> map = MultipartStringParser.stringToMultipart(responseString);
+        String header = map.get("header");
+        String payload = map.get("payload");
+
+        ContractAgreementMessage contractAgreementMessage;
+        try {
+            contractAgreementMessage = serializerProvider.getSerializer().deserialize(header, ContractAgreementMessage.class);
+        } catch (Exception e) {
+            throw new Exception("Wrong message type: " + header);
+        }
+
+        Contract contract;
+        try {
+            contract = serializerProvider.getSerializer().deserialize(payload, Contract.class);
+        } catch (Exception e) {
+            throw new Exception("Contract could not be deserialized: " + payload);
+        }
+
+        try {
+            ResourceMetadata metadata = requestedResourceService.getMetadata(key);
+            metadata.setPolicy(contract.toRdf()); //TODO check if metadata was updated automatically
+        } catch (Exception e) {
+            throw new Exception("Metadata could not be updated: " + e.getMessage());
+        }
+
+        try {
+            // send new artifact request message
+            Response response = requestMessageService.sendArtifactRequestMessage(recipient, requestedArtifact, contractAgreementMessage.getId(), contractAgreementMessage.getTransferContract());
+            String responseAsString = response.body().string();
+
+            // save data response
+            saveData(responseAsString, key);
+
+            // return data
+            return new ResponseEntity<>("Saved at: " + key + "\n"
+                    + String.format("Success: %s", (response != null)) + "\n"
+                    + String.format("Body: %s", responseAsString), HttpStatus.OK);
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Saves the data string in the internal database.
+     *
+     * @param response The data resource as string.
+     * @param resourceId The resource uuid.
+     * @throws java.lang.Exception if any.
+     */
+    private void saveData(String response, UUID resourceId) throws Exception {
+        Map<String, String> map = MultipartStringParser.stringToMultipart(response);
+        String header = map.get("header");
+        String payload = map.get("payload");
+
+        try {
+            serializerProvider.getSerializer().deserialize(header, ArtifactResponseMessage.class);
+        } catch (Exception e) {
+            throw new Exception("Wrong message type: " + payload);
+        }
+
+        try {
+            requestedResourceService.addData(resourceId, payload);
+        } catch (Exception e) {
+            throw new Exception("Data could not be saved: " + e.getMessage());
+        }
     }
 }

@@ -3,14 +3,14 @@ package de.fraunhofer.isst.dataspaceconnector.message;
 import de.fraunhofer.iais.eis.*;
 import de.fraunhofer.iais.eis.util.TypedLiteral;
 import de.fraunhofer.iais.eis.util.Util;
-import de.fraunhofer.isst.dataspaceconnector.model.ResourceContract;
+import de.fraunhofer.isst.dataspaceconnector.model.resource.ResourceContract;
 import de.fraunhofer.isst.dataspaceconnector.model.resource.ResourceMetadata;
 import de.fraunhofer.isst.dataspaceconnector.services.IdsUtils;
 import de.fraunhofer.isst.dataspaceconnector.services.communication.RequestService;
 import de.fraunhofer.isst.dataspaceconnector.services.negotiation.ContractService;
 import de.fraunhofer.isst.dataspaceconnector.services.resource.OfferedResourceService;
-import de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyHandler;
 import de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.NegotiationHandler;
+import de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyHandler;
 import de.fraunhofer.isst.ids.framework.configuration.ConfigurationContainer;
 import de.fraunhofer.isst.ids.framework.exceptions.HttpClientException;
 import de.fraunhofer.isst.ids.framework.messaging.core.handler.api.MessageHandler;
@@ -60,7 +60,6 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
     private ContractService contractService;
     private PolicyHandler policyHandler;
     private MessageUtils messageUtils;
-    private IdsUtils idsUtils;
     private RequestService requestService;
     private NegotiationHandler negotiationHandler;
 
@@ -85,13 +84,12 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
      */
     public ArtifactMessageHandler(OfferedResourceService offeredResourceService, ContractService contractService,
                                   TokenProvider tokenProvider, ConfigurationContainer configurationContainer,
-                                  PolicyHandler policyHandler, IdsUtils idsUtils, MessageUtils messageUtils,
-                                  SerializerProvider serializerProvider, RequestService requestService, NegotiationHandler negotiationHandler) {
+                                  PolicyHandler policyHandler, MessageUtils messageUtils, RequestService requestService,
+                                  SerializerProvider serializerProvider, NegotiationHandler negotiationHandler) {
         this.offeredResourceService = offeredResourceService;
         this.contractService = contractService;
         this.tokenProvider = tokenProvider;
         this.connector = configurationContainer.getConnector();
-        this.idsUtils = idsUtils;
         this.policyHandler = policyHandler;
         this.messageUtils = messageUtils;
         this.serializerProvider = serializerProvider;
@@ -205,17 +203,12 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
      */
     private MessageResponse acceptContract(ContractRequest contractRequest) {
         LOGGER.info("Contract accepted.");
-
-        Calendar c = Calendar.getInstance();
-        c.setTime(new Date());
-        c.add(Calendar.YEAR, 1);
-
         ContractAgreement contractAgreement = new ContractAgreementBuilder()
                 ._consumer_(contractRequest.getConsumer())
                 ._provider_(connector.getMaintainer())
-                ._contractDate_(idsUtils.getGregorianOf(new Date()))
-                ._contractStart_(idsUtils.getGregorianOf(new Date()))
-                ._contractEnd_(idsUtils.getGregorianOf(c.getTime()))
+                ._contractDate_(message.getIssued()) // TODO
+                ._contractStart_(message.getIssued())
+//                ._contractEnd_()
                 ._obligation_(contractRequest.getObligation())
                 ._permission_(contractRequest.getPermission())
                 ._prohibition_(contractRequest.getProhibition())
@@ -229,30 +222,21 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
             // TODO try again later
         }
 
-        // send ContractAgreement to the consumer
-        try {
-            requestService.sendContractAgreementMessage(new ContractAgreementMessageBuilder()
-                    ._securityToken_(tokenProvider.getTokenJWS())
-                    ._correlationMessage_(message.getId())
-                    ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
-                    ._issuerConnector_(connector.getId())
-                    ._modelVersion_(connector.getOutboundModelVersion())
-                    ._senderAgent_(connector.getId())
-                    ._recipientConnector_(Util.asList(message.getIssuerConnector()))
-                    ._transferContract_(contractAgreement.getId())
-                    .build(), contractAgreement);
-        } catch (HttpClientException | IOException e) {
-            LOGGER.error("Message to consumer could not be sent: {}" + e.getMessage());
-            return ErrorResponse.withDefaultHeader(RejectionReason.INTERNAL_RECIPIENT_ERROR, "Not able to send the contract agreement message to the consumer.", connector.getId(), connector.getOutboundModelVersion());
-        }
-
         // save contract to contract repository
         contractService.addContract(new ResourceContract(resourceUri, contractAgreement.toRdf()));
         LOGGER.info("Saved contract to database: " + contractAgreement.getId());
 
         // send response to the data consumer
-//        return BodyResponse.create();
-        return null;
+        return BodyResponse.create(new ContractAgreementMessageBuilder()
+                ._securityToken_(tokenProvider.getTokenJWS())
+                ._correlationMessage_(message.getId())
+                ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
+                ._issuerConnector_(connector.getId())
+                ._modelVersion_(connector.getOutboundModelVersion())
+                ._senderAgent_(connector.getId())
+                ._recipientConnector_(Util.asList(message.getIssuerConnector()))
+                ._transferContract_(contractAgreement.getId())
+                .build(), contractAgreement);
     }
 
     /**
