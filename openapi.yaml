@@ -242,7 +242,7 @@ paths:
         - 'Connector: Selfservice'
       summary: Connector Self-description
       description: Get the connector's self-description.
-      operationId: getSelfService
+      operationId: getSelfDescription
       responses:
         "200":
           description: OK

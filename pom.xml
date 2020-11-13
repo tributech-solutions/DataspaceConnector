@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>de.fraunhofer.isst</groupId>
 	<artifactId>dataspace-connector</artifactId>
-	<version>${project.version}</version>
+	<version>${revision}</version>
 	<name>dataspace-connector</name>
 	<description>IDS Connector developed by the Fraunhofer ISST</description>
 	<url>https://gitlab.cc-asp.fraunhofer.de/fhg-isst-ids/dataspace-connector</url>
@@ -29,7 +29,7 @@
 			<organization>Fraunhofer Institute for Software and Systems Engineering</organization>
 			<organizationUrl>https://www.isst.fraunhofer.de/</organizationUrl>
 			<roles>
-				<role>head</role>
+				<role>lead</role>
 				<role>architect</role>
 				<role>developer</role>
 			</roles>

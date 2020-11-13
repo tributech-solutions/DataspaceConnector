@@ -3,6 +3,25 @@ All notable changes to this project will be documented in this file.
 
 ## [3.3.0-SNAPSHOT]
 
+### Changed
+- Remove requested resources from catalog in description response.
+- Change request param to request body for policy-pattern (policy verification) endpoint.
+- Add sending a response message to the notification message handler.
+- Add contract request in request body for artifact request message.
+- Remove policy pattern `prohibit access`.
+
+### Added
+- Add public endpoint for self-description without resource catalog.
+- Check model version of received IDS messages, return a rejection message in case of incompatibility.
+- Add minio source type. ToDo: implement access.
+- Add policy negotiation sequence to artifact message handler.
+- Add contract agreement message handler to send an artifact request message with a contract agreement.
+- Add contract repository to store contract agreements.
+- Add message repository to store sent artifact request messages.
+- Send contract agreement to clearing house.
+- Add MessageUtils class.
+- Set and get policy negotiation status at runtime.
+
 ## [3.2.1] - 2020-11-05
 
 ### Changed 
