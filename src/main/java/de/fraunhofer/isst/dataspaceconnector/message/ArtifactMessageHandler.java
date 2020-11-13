@@ -30,8 +30,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.UUID;
 
 /**
@@ -206,9 +204,9 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
         ContractAgreement contractAgreement = new ContractAgreementBuilder()
                 ._consumer_(contractRequest.getConsumer())
                 ._provider_(connector.getMaintainer())
-                ._contractDate_(message.getIssued()) // TODO
-                ._contractStart_(message.getIssued())
-//                ._contractEnd_()
+                ._contractDate_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
+                ._contractStart_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
+//                ._contractEnd_() TODO
                 ._obligation_(contractRequest.getObligation())
                 ._permission_(contractRequest.getPermission())
                 ._prohibition_(contractRequest.getProhibition())

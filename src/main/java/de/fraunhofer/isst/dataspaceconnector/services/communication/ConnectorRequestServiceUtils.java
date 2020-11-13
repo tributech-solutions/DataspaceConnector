@@ -44,9 +44,10 @@ public class ConnectorRequestServiceUtils {
      * @param requestedResourceService a {@link de.fraunhofer.isst.dataspaceconnector.services.resource.RequestedResourceService} object.
      * @param serializerProvider a {@link de.fraunhofer.isst.ids.framework.spring.starter.SerializerProvider} object.
      */
-    public ConnectorRequestServiceUtils(RequestedResourceService requestedResourceService, SerializerProvider serializerProvider) {
+    public ConnectorRequestServiceUtils(RequestedResourceService requestedResourceService, SerializerProvider serializerProvider, ConnectorRequestServiceImpl requestMessageService) {
         this.requestedResourceService = requestedResourceService;
         this.serializerProvider = serializerProvider;
+        this.requestMessageService = requestMessageService;
     }
 
     /**
@@ -143,16 +144,16 @@ public class ConnectorRequestServiceUtils {
             throw new Exception("Wrong message type: " + header);
         }
 
-        Contract contract;
-        try {
-            contract = serializerProvider.getSerializer().deserialize(payload, Contract.class);
-        } catch (Exception e) {
-            throw new Exception("Contract could not be deserialized: " + payload);
-        }
+//        Contract contract;
+//        try {
+//            contract = serializerProvider.getSerializer().deserialize(payload, Contract.class);
+//        } catch (Exception e) {
+//            throw new Exception("Contract could not be deserialized: " + payload);
+//        }
 
         try {
             ResourceMetadata metadata = requestedResourceService.getMetadata(key);
-            metadata.setPolicy(contract.toRdf()); //TODO check if metadata was updated automatically
+            metadata.setPolicy(payload); //TODO check if metadata was updated automatically
         } catch (Exception e) {
             throw new Exception("Metadata could not be updated: " + e.getMessage());
         }
