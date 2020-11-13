@@ -117,16 +117,28 @@ public class RequestedResourceServiceImpl implements RequestedResourceService {
      */
     @Override
     public String getData(UUID resourceId) throws IOException {
-        RequestedResource resource = requestedResourceRepository.getOne(resourceId);
-        int counter = resource.getAccessed();
+        RequestedResource resource;
+        try {
+            resource = requestedResourceRepository.getOne(resourceId);
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+            throw new IOException("Resource not found.");
+        }
 
+        int counter = resource.getAccessed();
         resource.setAccessed(counter + 1);
         requestedResourceRepository.save(resource);
 
         if (policyHandler.onDataAccess(resource)) {
-            return requestedResourceRepository.getOne(resourceId).getData();
+            try {
+                return requestedResourceRepository.getOne(resourceId).getData();
+            } catch (Exception e) {
+                LOGGER.error(e.getMessage());
+                throw new IOException(e.getMessage());
+            }
+
         } else {
-            return "Policy Restriction!";
+            throw new IOException("Policy Restriction!");
         }
     }
 

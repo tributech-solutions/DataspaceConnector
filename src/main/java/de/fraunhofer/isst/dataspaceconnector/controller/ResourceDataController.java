@@ -89,7 +89,7 @@ public class ResourceDataController { // Header: Content-Type: application/json
             try {
                 return new ResponseEntity<>(requestedResourceService.getData(id), HttpStatus.OK);
             } catch (Exception f) {
-                return new ResponseEntity<>("Resource not found", HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>(String.valueOf(f.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
     }
