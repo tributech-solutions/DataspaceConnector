@@ -57,9 +57,7 @@ public class RequestServiceImpl implements RequestService {
                 .build();
 
         MultipartBody body = InfomodelMessageBuilder.messageWithString(message, "");
-        LOGGER.info("TO CLEARING HOUSE | NOT SENT: " + body);
-//        return idsHttpService.send(body, URI.create(recipient)); TODO send log messages
-        return null;
+        return idsHttpService.send(body, URI.create("https://ch-ids.aisec.fraunhofer.de/logs/messages"));
     }
 
     /** {@inheritDoc} */
@@ -75,9 +73,7 @@ public class RequestServiceImpl implements RequestService {
                 .build();
 
         MultipartBody body = InfomodelMessageBuilder.messageWithString(message, "");
-        LOGGER.info("TO PARTICIPANT | NOT SENT: " + body);
-//        return idsHttpService.send(body, URI.create(recipient)); TODO send notification messages
-        return null;
+        return idsHttpService.send(body, URI.create(recipient));
     }
 
     /** {@inheritDoc} */
@@ -96,7 +92,6 @@ public class RequestServiceImpl implements RequestService {
                 .build();
 
         MultipartBody body = InfomodelMessageBuilder.messageWithString(message, contractAgreement.toRdf());
-        LOGGER.info("TO CLEARING HOUSE | NOT SENT: " + body);
-//        return idsHttpService.send(body, URI.create(recipient)); TODO send contract agreement messages
+        idsHttpService.send(body, URI.create("https://ch-ids.aisec.fraunhofer.de/logs/messages"));
     }
 }
