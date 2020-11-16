@@ -130,7 +130,7 @@ public class PolicyHandler {
             case DURATION_USAGE:
                 return policyVerifier.checkDuration(dataResource.getCreated(), contract);
             case USAGE_LOGGING:
-                return policyVerifier.logAccess();
+                return policyVerifier.logAccess(dataResource.getUuid());
             case N_TIMES_USAGE:
                 return policyVerifier.checkFrequency(contract, dataResource.getUuid());
             case USAGE_NOTIFICATION:

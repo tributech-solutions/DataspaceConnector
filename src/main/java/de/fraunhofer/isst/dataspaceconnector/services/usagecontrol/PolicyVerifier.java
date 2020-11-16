@@ -74,9 +74,9 @@ public class PolicyVerifier {
      *
      * @return Success or not (access or inhibition).
      */
-    public boolean logAccess() {
+    public boolean logAccess(UUID pid) {
         try {
-            Response response = requestService.sendLogMessage();
+            Response response = requestService.sendLogMessage("", String.valueOf(pid));
             if (response != null && response.code() == 200) {
                 return allowAccess();
             } else {

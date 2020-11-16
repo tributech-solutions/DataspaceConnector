@@ -47,17 +47,20 @@ public class RequestServiceImpl implements RequestService {
 
     /** {@inheritDoc} */
     @Override
-    public Response sendLogMessage() throws IOException {
+    public Response sendLogMessage(String payload, String pid) throws IOException {
+        String clearingHouse = "https://ch-ids.aisec.fraunhofer.de/logs/messages/";
+
         LogMessage message = new LogMessageBuilder()
                 ._issued_(Util.getGregorianNow())
                 ._modelVersion_(connector.getOutboundModelVersion())
                 ._issuerConnector_(connector.getId())
                 ._senderAgent_(connector.getId())
                 ._securityToken_(tokenProvider.getTokenJWS())
+                ._recipientConnector_(de.fraunhofer.iais.eis.util.Util.asList(URI.create(clearingHouse + pid)))
                 .build();
 
-        MultipartBody body = InfomodelMessageBuilder.messageWithString(message, "");
-        return idsHttpService.send(body, URI.create("https://ch-ids.aisec.fraunhofer.de/logs/messages"));
+        MultipartBody body = InfomodelMessageBuilder.messageWithString(message, payload);
+        return idsHttpService.send(body, URI.create(clearingHouse));
     }
 
     /** {@inheritDoc} */
@@ -74,24 +77,5 @@ public class RequestServiceImpl implements RequestService {
 
         MultipartBody body = InfomodelMessageBuilder.messageWithString(message, "");
         return idsHttpService.send(body, URI.create(recipient));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public void sendContractAgreementMessage(ContractAgreement contractAgreement, URI correlationMessage) throws IOException {
-        String clearingHouse = "";
-        ContractAgreementMessage message = new ContractAgreementMessageBuilder()
-                ._securityToken_(tokenProvider.getTokenJWS())
-                ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
-                ._issuerConnector_(connector.getId())
-                ._modelVersion_(connector.getOutboundModelVersion())
-                ._senderAgent_(connector.getId())
-                ._recipientConnector_(de.fraunhofer.iais.eis.util.Util.asList(URI.create(clearingHouse)))
-                ._transferContract_(contractAgreement.getId())
-                ._correlationMessage_(correlationMessage)
-                .build();
-
-        MultipartBody body = InfomodelMessageBuilder.messageWithString(message, contractAgreement.toRdf());
-        idsHttpService.send(body, URI.create("https://ch-ids.aisec.fraunhofer.de/logs/messages"));
     }
 }

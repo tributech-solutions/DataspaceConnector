@@ -17,7 +17,7 @@ public interface ContractService {
      *
      * @param contract a {@link ResourceContract} object.
      */
-    void addContract(ResourceContract contract);
+    UUID addContract(ResourceContract contract);
 
     /**
      * <p>getContract.</p>

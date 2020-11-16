@@ -215,20 +215,7 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
                 ._prohibition_(contractRequest.getProhibition())
                 .build();
 
-        // send ContractAgreement to the ClearingHouse
-        try {
-            requestService.sendContractAgreementMessage(contractAgreement, message.getId());
-        } catch (HttpClientException | IOException e) {
-            LOGGER.error("Message to clearing house could not be sent: {}" + e.getMessage());
-            // TODO try again later
-        }
-
-        // save contract to contract repository
-        contractService.addContract(new ResourceContract(resourceUri, contractAgreement.toRdf()));
-        LOGGER.info("Saved contract to database: " + contractAgreement.getId());
-
-        // send response to the data consumer
-        return BodyResponse.create(new ContractAgreementMessageBuilder()
+        ContractAgreementMessage contractAgreementMessage = new ContractAgreementMessageBuilder()
                 ._securityToken_(tokenProvider.getTokenJWS())
                 ._correlationMessage_(message.getId())
                 ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
@@ -237,7 +224,22 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
                 ._senderAgent_(connector.getId())
                 ._recipientConnector_(Util.asList(message.getIssuerConnector()))
                 ._transferContract_(contractAgreement.getId())
-                .build(), contractAgreement.toRdf());
+                .build();
+
+        // save contract to contract repository
+        UUID pid = contractService.addContract(new ResourceContract(resourceUri, contractAgreement.toRdf()));
+        LOGGER.info("Saved contract to database: " + contractAgreement.getId());
+
+        // send ContractAgreement to the ClearingHouse
+        try {
+            requestService.sendLogMessage(contractAgreementMessage.toRdf(), String.valueOf(pid));
+        } catch (HttpClientException | IOException e) {
+            LOGGER.error("Message to clearing house could not be sent: {}" + e.getMessage());
+            // TODO try again later
+        }
+
+        // send response to the data consumer
+        return BodyResponse.create(contractAgreementMessage, contractAgreement.toRdf());
     }
 
     /**

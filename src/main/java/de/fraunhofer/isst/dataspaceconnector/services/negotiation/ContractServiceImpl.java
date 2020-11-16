@@ -30,8 +30,9 @@ public class ContractServiceImpl implements ContractService{
     }
 
     @Override
-    public void addContract(ResourceContract contract) {
+    public UUID addContract(ResourceContract contract) {
         contractRepository.save(contract);
+        return contract.getPid();
     }
 
     @Override

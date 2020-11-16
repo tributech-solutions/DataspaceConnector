@@ -91,7 +91,7 @@ public class IdsUtils {
             try {
                 contract = serializerProvider.getSerializer().deserialize(resource.getResourceMetadata().getPolicy(), ContractOffer.class);
             } catch (IOException e) {
-                LOGGER.error("Could not deserialize contract: " + e.getMessage());
+                contract = null;
             }
         }
 
