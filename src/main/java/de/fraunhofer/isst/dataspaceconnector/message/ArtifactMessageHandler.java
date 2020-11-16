@@ -287,22 +287,29 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
             }
         }
 
+        ArtifactResponseMessage artifactResponseMessage = new ArtifactResponseMessageBuilder()
+                ._securityToken_(tokenProvider.getTokenJWS())
+                ._correlationMessage_(message.getId())
+                ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
+                ._issuerConnector_(connector.getId())
+                ._modelVersion_(connector.getOutboundModelVersion())
+                ._senderAgent_(connector.getId())
+                ._recipientConnector_(Util.asList(message.getIssuerConnector()))
+                .build();
+
         try {
-            LOGGER.info("Execute access control...");
-            if (policyHandler.onDataProvision(contract)) {
-                LOGGER.info("Resource access granted: " + resourceId);
-                return BodyResponse.create(new ArtifactResponseMessageBuilder()
-                        ._securityToken_(tokenProvider.getTokenJWS())
-                        ._correlationMessage_(message.getId())
-                        ._issued_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
-                        ._issuerConnector_(connector.getId())
-                        ._modelVersion_(connector.getOutboundModelVersion())
-                        ._senderAgent_(connector.getId())
-                        ._recipientConnector_(Util.asList(message.getIssuerConnector()))
-                        .build(), offeredResourceService.getDataByRepresentation(resourceId, artifactId));
+            if (negotiationHandler.isStatus()) {
+                LOGGER.info("Execute access control...");
+                if (policyHandler.onDataProvision(contract)) {
+                    LOGGER.info("Resource access granted: " + resourceId);
+                    return BodyResponse.create(artifactResponseMessage, offeredResourceService.getDataByRepresentation(resourceId, artifactId));
+                } else {
+                    LOGGER.error("Policy restriction detected.");
+                    return ErrorResponse.withDefaultHeader(RejectionReason.NOT_AUTHORIZED, "Policy restriction detected: You are not authorized to receive this data.", connector.getId(), connector.getOutboundModelVersion());
+                }
             } else {
-                LOGGER.error("Policy restriction detected.");
-                return ErrorResponse.withDefaultHeader(RejectionReason.NOT_AUTHORIZED, "Policy restriction detected: You are not authorized to receive this data.", connector.getId(), connector.getOutboundModelVersion());
+                LOGGER.info("Return data without access control...");
+                return BodyResponse.create(artifactResponseMessage, offeredResourceService.getDataByRepresentation(resourceId, artifactId));
             }
         } catch (Exception e) {
             LOGGER.error("Policy verification error: {}" + e.getMessage());

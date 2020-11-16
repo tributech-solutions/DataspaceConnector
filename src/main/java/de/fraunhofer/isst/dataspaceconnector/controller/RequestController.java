@@ -5,6 +5,7 @@ import de.fraunhofer.iais.eis.Contract;
 import de.fraunhofer.iais.eis.ContractOffer;
 import de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestServiceImpl;
 import de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestServiceUtils;
+import de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.NegotiationHandler;
 import de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyHandler;
 import de.fraunhofer.isst.ids.framework.spring.starter.SerializerProvider;
 import de.fraunhofer.isst.ids.framework.spring.starter.TokenProvider;
@@ -44,7 +45,7 @@ public class RequestController {
     private ConnectorRequestServiceImpl requestMessageService;
     private ConnectorRequestServiceUtils connectorRequestServiceUtils;
 
-    private PolicyHandler policyHandler;
+    private NegotiationHandler negotiationHandler;
 
     @Autowired
     /**
@@ -55,12 +56,12 @@ public class RequestController {
      * @param connectorRequestServiceUtils a {@link de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestServiceUtils} object.
      */
     public RequestController(TokenProvider tokenProvider, SerializerProvider serializerProvider,
-                             ConnectorRequestServiceImpl requestMessageService, ConnectorRequestServiceUtils connectorRequestServiceUtils, PolicyHandler policyHandler) {
+                             ConnectorRequestServiceImpl requestMessageService, ConnectorRequestServiceUtils connectorRequestServiceUtils, NegotiationHandler negotiationHandler) {
         this.tokenProvider = tokenProvider;
         this.serializerProvider = serializerProvider;
         this.requestMessageService = requestMessageService;
         this.connectorRequestServiceUtils = connectorRequestServiceUtils;
-        this.policyHandler = policyHandler;
+        this.negotiationHandler = negotiationHandler;
     }
 
     /**
@@ -134,12 +135,25 @@ public class RequestController {
             if (connectorRequestServiceUtils.resourceExists(key)) {
                 // send artifact request message
                 Response response = requestMessageService.sendArtifactRequestMessage(recipient, requestedArtifact, contract);
-                try {
-                    String responseAsString = response.body().string();
-                    return connectorRequestServiceUtils.checkContractAgreementResponse(responseAsString, key, recipient, requestedArtifact);
-                } catch (Exception e) {
-                    LOGGER.error("Response error: " + e.getMessage());
-                    return new ResponseEntity<>("Policy Negotiation was not successful. Response: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+                String responseAsString = response.body().string();
+
+                if (negotiationHandler.isStatus()) {
+                    try {
+                        return connectorRequestServiceUtils.checkContractAgreementResponse(responseAsString, key, recipient, requestedArtifact);
+                    } catch (Exception e) {
+                        LOGGER.error("Response error: " + e.getMessage());
+                        return new ResponseEntity<>("Policy Negotiation was not successful. Response: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+                    }
+                } else {
+                    try {
+                        connectorRequestServiceUtils.saveData(responseAsString, key);
+                        return new ResponseEntity<>("Saved at: " + key + "\n"
+                                + String.format("Success: %s", (response != null)) + "\n"
+                                + String.format("Body: %s", responseAsString), HttpStatus.OK);
+                    } catch (Exception e) {
+                        LOGGER.error(e.getMessage());
+                        return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+                    }
                 }
             } else {
                 LOGGER.error("Key is not valid.");

@@ -183,7 +183,7 @@ public class ConnectorRequestServiceUtils {
      * @param resourceId The resource uuid.
      * @throws java.lang.Exception if any.
      */
-    private void saveData(String response, UUID resourceId) throws Exception {
+    public void saveData(String response, UUID resourceId) throws Exception {
         Map<String, String> map = MultipartStringParser.stringToMultipart(response);
         String header = map.get("header");
         String payload = map.get("payload");
