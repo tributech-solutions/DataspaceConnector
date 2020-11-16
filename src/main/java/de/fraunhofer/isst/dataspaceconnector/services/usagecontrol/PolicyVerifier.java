@@ -104,7 +104,7 @@ public class PolicyVerifier {
             if (response != null && response.code() == 200) {
                 return allowAccess();
             } else {
-                LOGGER.error("NOT NOTIFIED");
+                LOGGER.error("NOTIFICATION MESSAGE COULD NOT BE SENT");
                 return allowAccess();
             }
         } catch (HttpClientException | IOException e) {

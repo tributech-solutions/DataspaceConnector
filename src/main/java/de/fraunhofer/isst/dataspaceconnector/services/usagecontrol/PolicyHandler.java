@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * This class provides policy pattern recognition and calls the {@link de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyVerifier} on data request or access.
@@ -25,8 +24,6 @@ public class PolicyHandler {
      * Constant <code>LOGGER</code>
      */
     public static final Logger LOGGER = LoggerFactory.getLogger(PolicyHandler.class);
-    /** Constant <code>contract</code> */
-    public static Contract contract;
 
     private PolicyVerifier policyVerifier;
     private SerializerProvider serializerProvider;
@@ -46,17 +43,11 @@ public class PolicyHandler {
     /**
      * Reads the properties of an odrl policy to automatically recognize the policy pattern.
      *
-     * @param policy The parsed policy object.
+     * @param contract The contract object.
      * @return The recognized policy pattern.
      * @throws java.io.IOException if any.
      */
-    public Pattern getPattern(String policy) throws IOException{
-        try {
-            contract = serializerProvider.getSerializer().deserialize(policy, Contract.class);
-        } catch (IOException e) {
-            throw new IOException("The policy could not be read. Please check the policy syntax.");
-        }
-
+    public Pattern getPattern(Contract contract) throws IOException{
         if (contract.getPermission() != null && contract.getPermission().get(0) != null) {
             Permission permission = contract.getPermission().get(0);
             ArrayList<? extends Constraint> constraints = permission.getConstraint();
@@ -101,12 +92,12 @@ public class PolicyHandler {
     /**
      * Implements the policy restrictions depending on the policy pattern type (on artifact request as provider).
      *
-     * @param policy  The resource's usage policy.
+     * @param contract  The resource's contract.
      * @return Whether the data can be accessed.
      * @throws java.io.IOException if any.
      */
-    public boolean onDataProvision(String policy) throws IOException {
-        switch (getPattern(policy)) {
+    public boolean onDataProvision(ContractAgreement contract) throws IOException {
+        switch (getPattern(contract)) {
             case PROVIDE_ACCESS:
                 return policyVerifier.allowAccess();
             case USAGE_DURING_INTERVAL:
@@ -125,9 +116,14 @@ public class PolicyHandler {
      * @throws java.io.IOException if any.
      */
     public boolean onDataAccess(RequestedResource dataResource) throws IOException {
-        String policy = dataResource.getResourceMetadata().getPolicy();
+        ContractAgreement contract;
+        try {
+            contract = serializerProvider.getSerializer().deserialize(dataResource.getResourceMetadata().getPolicy(), ContractAgreement.class);
+        } catch (IOException e) {
+            throw new IOException("The policy could not be read. Please check the policy syntax.");
+        }
 
-        switch (getPattern(policy)) {
+        switch (getPattern(contract)) {
             case USAGE_DURING_INTERVAL:
             case USAGE_UNTIL_DELETION:
                 return policyVerifier.checkInterval(contract);
@@ -180,11 +176,6 @@ public class PolicyHandler {
         }
         return true;
     }
-
-    public Contract getContract() {
-        return contract;
-    }
-
 
     public enum Pattern {
         /**

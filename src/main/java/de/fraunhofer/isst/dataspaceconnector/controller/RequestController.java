@@ -2,9 +2,11 @@ package de.fraunhofer.isst.dataspaceconnector.controller;
 
 import de.fraunhofer.iais.eis.ArtifactResponseMessage;
 import de.fraunhofer.iais.eis.Contract;
+import de.fraunhofer.iais.eis.ContractOffer;
 import de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestServiceImpl;
 import de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestServiceUtils;
 import de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyHandler;
+import de.fraunhofer.isst.ids.framework.spring.starter.SerializerProvider;
 import de.fraunhofer.isst.ids.framework.spring.starter.TokenProvider;
 import de.fraunhofer.isst.ids.framework.util.MultipartStringParser;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,6 +40,7 @@ public class RequestController {
     public static final Logger LOGGER = LoggerFactory.getLogger(RequestController.class);
 
     private TokenProvider tokenProvider;
+    private SerializerProvider serializerProvider;
     private ConnectorRequestServiceImpl requestMessageService;
     private ConnectorRequestServiceUtils connectorRequestServiceUtils;
 
@@ -51,9 +54,10 @@ public class RequestController {
      * @param requestMessageService a {@link de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestServiceImpl} object.
      * @param connectorRequestServiceUtils a {@link de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestServiceUtils} object.
      */
-    public RequestController(TokenProvider tokenProvider, ConnectorRequestServiceImpl requestMessageService,
-                             ConnectorRequestServiceUtils connectorRequestServiceUtils, PolicyHandler policyHandler) {
+    public RequestController(TokenProvider tokenProvider, SerializerProvider serializerProvider,
+                             ConnectorRequestServiceImpl requestMessageService, ConnectorRequestServiceUtils connectorRequestServiceUtils, PolicyHandler policyHandler) {
         this.tokenProvider = tokenProvider;
+        this.serializerProvider = serializerProvider;
         this.requestMessageService = requestMessageService;
         this.connectorRequestServiceUtils = connectorRequestServiceUtils;
         this.policyHandler = policyHandler;
@@ -117,11 +121,10 @@ public class RequestController {
             @Parameter(description = "The contract offer for the requested resource.", required = true) @RequestBody String contractOffer,
             @Parameter(description = "A unique validation key.", required = true) @RequestParam("key") UUID key) throws IOException {
         if (tokenProvider.getTokenJWS() != null) {
-            Contract contract;
+            ContractOffer contract;
             // check input value for contract
             try {
-                policyHandler.getPattern(contractOffer);
-                contract = policyHandler.getContract();
+                contract = serializerProvider.getSerializer().deserialize(contractOffer, ContractOffer.class);
             } catch (Exception e) {
                 LOGGER.error("Policy pattern not supported.");
                 return new ResponseEntity<>("This is not a valid policy.", HttpStatus.BAD_REQUEST);

@@ -86,17 +86,17 @@ public class IdsUtils {
             }
         }
 
-        Contract contract = null;
+        ContractOffer contract = null;
         if (resource.getResourceMetadata().getPolicy() != null) {
             try {
-                contract = serializerProvider.getSerializer().deserialize(resource.getResourceMetadata().getPolicy(), Contract.class);
+                contract = serializerProvider.getSerializer().deserialize(resource.getResourceMetadata().getPolicy(), ContractOffer.class);
             } catch (IOException e) {
                 LOGGER.error("Could not deserialize contract: " + e.getMessage());
             }
         }
 
         return new ResourceBuilder(URI.create("https://w3id.org/idsa/autogen/resource/" + resource.getUuid()))
-                ._contractOffer_(Util.asList((ContractOffer) contract))
+                ._contractOffer_(Util.asList(contract))
                 ._created_(getGregorianOf(resource.getCreated()))
                 ._description_(Util.asList(new TypedLiteral(metadata.getDescription(), language)))
                 ._keyword_(keywords)

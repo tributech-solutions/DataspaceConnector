@@ -1,6 +1,7 @@
 package de.fraunhofer.isst.dataspaceconnector.services.communication;
 
 import de.fraunhofer.iais.eis.*;
+import de.fraunhofer.isst.dataspaceconnector.services.IdsUtils;
 import de.fraunhofer.isst.ids.framework.configuration.ConfigurationContainer;
 import de.fraunhofer.isst.ids.framework.exceptions.HttpClientException;
 import de.fraunhofer.isst.ids.framework.messages.InfomodelMessageBuilder;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Date;
 
 /**
  * This class implements all methods of {@link de.fraunhofer.isst.dataspaceconnector.services.communication.ConnectorRequestService}. It provides message handling for all outgoing
@@ -35,6 +37,7 @@ public class ConnectorRequestServiceImpl implements ConnectorRequestService {
     private Connector connector;
     private TokenProvider tokenProvider;
     private IDSHttpService idsHttpService;
+    private IdsUtils idsUtils;
 
     @Autowired
     /**
@@ -46,10 +49,11 @@ public class ConnectorRequestServiceImpl implements ConnectorRequestService {
      * @throws java.security.KeyManagementException if any.
      * @throws java.security.NoSuchAlgorithmException if any.
      */
-    public ConnectorRequestServiceImpl(ConfigurationContainer configurationContainer, TokenProvider tokenProvider)
+    public ConnectorRequestServiceImpl(ConfigurationContainer configurationContainer, TokenProvider tokenProvider, IdsUtils idsUtils)
             throws HttpClientException, KeyManagementException, NoSuchAlgorithmException {
         this.connector = configurationContainer.getConnector();
         this.tokenProvider = tokenProvider;
+        this.idsUtils = idsUtils;
 
         ClientProvider clientProvider = new ClientProvider(configurationContainer);
         this.idsHttpService = new IDSHttpService(clientProvider);
@@ -61,12 +65,12 @@ public class ConnectorRequestServiceImpl implements ConnectorRequestService {
      * Builds and sends an ArtifactRequestMessage.
      */
     @Override
-    public Response sendArtifactRequestMessage(URI recipient, URI artifact, Contract contract) throws IOException {
+    public Response sendArtifactRequestMessage(URI recipient, URI artifact, ContractOffer contract) throws IOException {
         String payload = "";
         if (contract != null) {
             payload = new ContractRequestBuilder()
                     ._consumer_(connector.getMaintainer())
-                    ._contractDate_(Util.getGregorianNow())
+                    ._contractDate_(idsUtils.getGregorianOf(new Date()))
                     ._obligation_(contract.getObligation())
                     ._permission_(contract.getPermission())
                     ._prohibition_(contract.getProhibition())

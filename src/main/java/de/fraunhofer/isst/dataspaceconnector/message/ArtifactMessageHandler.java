@@ -30,6 +30,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.UUID;
 
 /**
@@ -60,6 +61,7 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
     private MessageUtils messageUtils;
     private RequestService requestService;
     private NegotiationHandler negotiationHandler;
+    private IdsUtils idsUtils;
 
     private ResourceMetadata resourceMetadata;
     private ArtifactRequestMessageImpl message;
@@ -83,7 +85,7 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
     public ArtifactMessageHandler(OfferedResourceService offeredResourceService, ContractService contractService,
                                   TokenProvider tokenProvider, ConfigurationContainer configurationContainer,
                                   PolicyHandler policyHandler, MessageUtils messageUtils, RequestService requestService,
-                                  SerializerProvider serializerProvider, NegotiationHandler negotiationHandler) {
+                                  SerializerProvider serializerProvider, NegotiationHandler negotiationHandler, IdsUtils idsUtils) {
         this.offeredResourceService = offeredResourceService;
         this.contractService = contractService;
         this.tokenProvider = tokenProvider;
@@ -93,6 +95,7 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
         this.serializerProvider = serializerProvider;
         this.requestService = requestService;
         this.negotiationHandler = negotiationHandler;
+        this.idsUtils = idsUtils;
     }
 
     /**
@@ -204,8 +207,8 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
         ContractAgreement contractAgreement = new ContractAgreementBuilder()
                 ._consumer_(contractRequest.getConsumer())
                 ._provider_(connector.getMaintainer())
-                ._contractDate_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
-                ._contractStart_(de.fraunhofer.isst.ids.framework.messaging.core.handler.api.util.Util.getGregorianNow())
+                ._contractDate_(idsUtils.getGregorianOf(new Date()))
+                ._contractStart_(idsUtils.getGregorianOf(new Date()))
 //                ._contractEnd_() TODO
                 ._obligation_(contractRequest.getObligation())
                 ._permission_(contractRequest.getPermission())
@@ -234,7 +237,7 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
                 ._senderAgent_(connector.getId())
                 ._recipientConnector_(Util.asList(message.getIssuerConnector()))
                 ._transferContract_(contractAgreement.getId())
-                .build(), contractAgreement);
+                .build(), contractAgreement.toRdf());
     }
 
     /**
@@ -264,9 +267,10 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
      */
     private MessageResponse accessControl(URI contractId) {
         LOGGER.info("Check for resource with contractId " + contractId);
+        ContractAgreement contract = null;
         for (ResourceContract rc : contractService.getContracts()) {
             try {
-                ContractAgreement contract = serializerProvider.getSerializer().deserialize(rc.getContract(), ContractAgreement.class);
+                contract = serializerProvider.getSerializer().deserialize(rc.getContract(), ContractAgreement.class);
                 if (contract.getId() == contractId) {
                     URI rid = rc.getResourceId();
                     if (messageUtils.uuidFromUri(rid) != resourceId) {
@@ -283,7 +287,7 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
 
         try {
             LOGGER.info("Execute access control...");
-            if (policyHandler.onDataProvision(resourceMetadata.getPolicy())) {
+            if (policyHandler.onDataProvision(contract)) {
                 LOGGER.info("Resource access granted: " + resourceId);
                 return BodyResponse.create(new ArtifactResponseMessageBuilder()
                         ._securityToken_(tokenProvider.getTokenJWS())
@@ -295,7 +299,7 @@ public class ArtifactMessageHandler implements MessageHandler<ArtifactRequestMes
                         ._recipientConnector_(Util.asList(message.getIssuerConnector()))
                         .build(), offeredResourceService.getDataByRepresentation(resourceId, artifactId));
             } else {
-                LOGGER.error("Policy restriction detected: " + policyHandler.getPattern(resourceMetadata.getPolicy()));
+                LOGGER.error("Policy restriction detected.");
                 return ErrorResponse.withDefaultHeader(RejectionReason.NOT_AUTHORIZED, "Policy restriction detected: You are not authorized to receive this data.", connector.getId(), connector.getOutboundModelVersion());
             }
         } catch (Exception e) {

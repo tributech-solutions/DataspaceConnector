@@ -144,16 +144,16 @@ public class ConnectorRequestServiceUtils {
             throw new Exception("Wrong message type: " + header);
         }
 
-//        Contract contract;
-//        try {
-//            contract = serializerProvider.getSerializer().deserialize(payload, Contract.class);
-//        } catch (Exception e) {
-//            throw new Exception("Contract could not be deserialized: " + payload);
-//        }
+        ContractAgreement contract;
+        try {
+            contract = serializerProvider.getSerializer().deserialize(payload, ContractAgreement.class);
+        } catch (Exception e) {
+            throw new Exception("Contract could not be deserialized: " + payload);
+        }
 
         try {
             ResourceMetadata metadata = requestedResourceService.getMetadata(key);
-            metadata.setPolicy(payload); //TODO check if metadata was updated automatically
+            metadata.setPolicy(contract.toRdf());
         } catch (Exception e) {
             throw new Exception("Metadata could not be updated: " + e.getMessage());
         }

@@ -167,11 +167,19 @@ public class MainController {
     @RequestMapping(value = "/admin/api/example/policy-pattern", method = RequestMethod.POST)
     @ResponseBody
     public ResponseEntity<Object> getPolicyPattern(@Parameter(description = "The JSON string representing a policy", required = true) @RequestBody String policy) {
+        ContractOffer contract;
         try {
-            return new ResponseEntity<>(policyHandler.getPattern(policy), HttpStatus.OK);
+            contract = serializerProvider.getSerializer().deserialize(policy, ContractOffer.class);
         } catch (Exception e) {
             LOGGER.error("Policy could not be deserialized.");
             return new ResponseEntity<>("This is not a valid policy.", HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            return new ResponseEntity<>(policyHandler.getPattern(contract), HttpStatus.OK);
+        } catch (Exception e) {
+            LOGGER.error("Policy not valid.");
+            return new ResponseEntity<>("This policy pattern is not supported.", HttpStatus.BAD_REQUEST);
         }
     }
 

@@ -1,10 +1,12 @@
 package de.fraunhofer.isst.dataspaceconnector.controller;
 
+import de.fraunhofer.iais.eis.ContractOffer;
 import de.fraunhofer.isst.dataspaceconnector.model.resource.ResourceMetadata;
 import de.fraunhofer.isst.dataspaceconnector.model.resource.ResourceRepresentation;
 import de.fraunhofer.isst.dataspaceconnector.services.resource.OfferedResourceService;
 import de.fraunhofer.isst.dataspaceconnector.services.resource.RequestedResourceService;
 import de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyHandler;
+import de.fraunhofer.isst.ids.framework.spring.starter.SerializerProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,6 +39,7 @@ public class ResourceController {
     private RequestedResourceService requestedResourceService;
 
     private PolicyHandler policyHandler;
+    private SerializerProvider serializerProvider;
 
     @Autowired
     /**
@@ -46,11 +49,12 @@ public class ResourceController {
      * @param requestedResourceService a {@link de.fraunhofer.isst.dataspaceconnector.services.resource.RequestedResourceService} object.
      * @param policyHandler a {@link de.fraunhofer.isst.dataspaceconnector.services.usagecontrol.PolicyHandler} object.
      */
-    public ResourceController(OfferedResourceService offeredResourceService,
+    public ResourceController(OfferedResourceService offeredResourceService, SerializerProvider serializerProvider,
                               PolicyHandler policyHandler, RequestedResourceService requestedResourceService) {
         this.offeredResourceService = offeredResourceService;
         this.requestedResourceService = requestedResourceService;
         this.policyHandler = policyHandler;
+        this.serializerProvider = serializerProvider;
     }
 
     /**
@@ -166,14 +170,23 @@ public class ResourceController {
     public ResponseEntity<Object> updateContract(
             @Parameter(description = "The resource uuid.", required = true) @PathVariable("resource-id") UUID resourceId,
             @Parameter(description = "A new resource contract.", required = true) @RequestBody String policy) throws IllegalArgumentException {
+        ContractOffer contract;
         try {
-            policyHandler.getPattern(policy);
-        } catch (IOException e) {
-            return new ResponseEntity<>("Policy syntax error: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+            contract = serializerProvider.getSerializer().deserialize(policy, ContractOffer.class);
+        } catch (Exception e) {
+            LOGGER.error("Policy could not be deserialized.");
+            return new ResponseEntity<>("This is not a valid policy.", HttpStatus.BAD_REQUEST);
         }
 
         try {
-            offeredResourceService.updateContract(resourceId, policy);
+            policyHandler.getPattern(contract);
+        } catch (Exception e) {
+            LOGGER.error("Policy not valid.");
+            return new ResponseEntity<>("This policy pattern is not supported.", HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            offeredResourceService.updateContract(resourceId, contract.toRdf());
             return new ResponseEntity<>("Contract was updated successfully", HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>("Resource not found", HttpStatus.NOT_FOUND);
