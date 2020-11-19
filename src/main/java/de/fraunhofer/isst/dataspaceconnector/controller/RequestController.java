@@ -119,16 +119,18 @@ public class RequestController {
     public ResponseEntity<Object> requestData(
             @Parameter(description = "The URI of the requested IDS connector.", required = true, example = "https://localhost:8080/api/ids/data") @RequestParam("recipient") URI recipient,
             @Parameter(description = "The URI of the requested artifact.", required = true, example = "https://w3id.org/idsa/autogen/artifact/a4212311-86e4-40b3-ace3-ef29cd687cf9") @RequestParam(value = "requestedArtifact") URI requestedArtifact,
-            @Parameter(description = "The contract offer for the requested resource.", required = true) @RequestBody String contractOffer,
+            @Parameter(description = "The contract offer for the requested resource.", required = false) @RequestBody(required = false) String contractOffer,
             @Parameter(description = "A unique validation key.", required = true) @RequestParam("key") UUID key) throws IOException {
         if (tokenProvider.getTokenJWS() != null) {
-            ContractOffer contract;
+            ContractOffer contract = null;
             // check input value for contract
-            try {
-                contract = serializerProvider.getSerializer().deserialize(contractOffer, ContractOffer.class);
-            } catch (Exception e) {
-                LOGGER.error("Policy pattern not supported.");
-                return new ResponseEntity<>("This is not a valid policy.", HttpStatus.BAD_REQUEST);
+            if(negotiationHandler.isStatus()) {
+                try {
+                    contract = serializerProvider.getSerializer().deserialize(contractOffer, ContractOffer.class);
+                } catch (Exception e) {
+                    LOGGER.error("Policy pattern not supported.");
+                    return new ResponseEntity<>("This is not a valid policy.", HttpStatus.BAD_REQUEST);
+                }
             }
 
             // check for internal database entry
