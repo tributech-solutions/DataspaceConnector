@@ -14,11 +14,11 @@ class ControllerUtilsTest {
     @Test
     void respondRejectUnauthorized_Null_UnauthorizedWithMessageResponse() {
         // ARRANGE
-        final String emptyString = null;
+        final String nullString = null;
 
         // ACT
         final var response =
-                ControllerUtils.respondRejectUnauthorized(emptyString);
+                ControllerUtils.respondRejectUnauthorized(nullString);
 
         // ASSERT
         assertNotNull(response);
@@ -84,10 +84,10 @@ class ControllerUtilsTest {
     @Test
     void respondUpdateError_Null_InternalServerErrorWithMessageResponse() {
         // ARRANGE
-        final String emptyString = null;
+        final String nullString = null;
 
         // ACT
-        final var response = ControllerUtils.respondUpdateError(emptyString);
+        final var response = ControllerUtils.respondUpdateError(nullString);
 
         // ASSERT
         assertNotNull(response);
