@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [4.2.0]
+
+### Added 
+- Configure timeout values for http connections via `application.properties`.
+
 ## [4.1.0] - 2021-03-02
 
 ### Added
