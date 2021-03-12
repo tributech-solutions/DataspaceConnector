@@ -23,7 +23,7 @@
       "ids:keyValue" : "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuw6mFrdflXZTJgFOA5smDXC09SmpJWoGpyERZNEy31pKdsRGhTipR27j9irmmqihv7gIgzCnx6kIRNGI2u0oFQ5FgvO1xxgzcihdpF0CheOf9INgisPkq5hj8Ae/DYXkvjhQ6c6ak/ZYfj0NpqyEPcJ5MLRmYGexMaMZmTbqDJvJl5JG3+bE3Ya21hTZYOxiSicpfFgJ30kn5aUIAtd05IZy7z1sDiVLtTXlLfe/ZQC4pnjFts+tc12sX9ihImnCkd0Wvz3CTZoyBSsc1TdBkb9m0C5tvg0fQP4QgF/zH2QoZnnrI52uAZ8MomWtY2lt3D0kkpR69pfVDJ7y3vN/ewIDAQAB"
     },
     "ids:description" : [ {
-      "@value" : "IDS Connector with static example resources hosted by the Fraunhofer ISST",
+      "@value" : "Tributech Development IDS-connector",
       "@type" : "http://www.w3.org/2001/XMLSchema#string"
     } ],
     "ids:version" : "@project.version@",
@@ -58,25 +58,5 @@
   },
   "ids:keyStore" : {
     "@id" : "file:///conf/keystore-localhost.p12"
-  },
-  "ids:connectorProxy" : [ {
-    "@type" : "ids:Proxy",
-    "@id" : "https://w3id.org/idsa/autogen/proxy/548dc73a-ccfb-4039-9569-4b8e219b90bc",
-    "ids:proxyAuthentication" : {
-      "@type" : "ids:BasicAuthentication",
-      "@id" : "https://w3id.org/idsa/autogen/basicAuthentication/47e3cd59-d351-4f5b-99fc-561c94bad5e1"
-    },
-    "ids:proxyURI" : {
-      "@id" : "http://proxy.dortmund.isst.fraunhofer.de:3128"
-    },
-    "ids:noProxy" : [ {
-      "@id" : "https://localhost:8080/"
-    }, {
-      "@id" : "http://localhost:8080/"
-    }, {
-      "@id" : "https://localhost:8081/"
-    }, {
-      "@id" : "http://localhost:8081/"
-    } ]
-  } ]
+  }
 }

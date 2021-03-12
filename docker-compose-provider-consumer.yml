@@ -1,0 +1,60 @@
+version: '3.5'
+
+services:
+
+  postgres-provider:
+    image: postgres
+    container_name: 'postgres-provider-container'
+    ports:
+      - "5433:5432"
+    env_file:
+      - ./postgres-provider.env
+    networks:
+      - connector
+    volumes:
+      - connector-provider-data:/var/lib/postgresql/data
+
+  connector-provider:
+    build:
+      context: .
+    container_name: 'connector-provider-container'
+    ports:
+      - "8081:8080"
+    env_file:
+      - ./connector-provider.env
+    networks:
+      - connector
+    depends_on:
+      - postgres-provider
+
+  postgres-consumer:
+    image: postgres
+    container_name: 'postgres-consumer-container'
+    ports:
+      - "5434:5432"
+    env_file:
+      - ./postgres-consumer.env
+    networks:
+      - connector
+    volumes:
+      - connector-consumer-data:/var/lib/postgresql/data
+
+  connector-consumer:
+    build:
+      context: .
+    container_name: 'connector-consumer-container'
+    ports:
+      - "8082:8080"
+    env_file:
+      - ./connector-consumer.env
+    networks:
+      - connector
+    depends_on:
+      - postgres-consumer
+
+networks:
+  connector:
+
+volumes:
+  connector-provider-data: {}
+  connector-consumer-data: {}
